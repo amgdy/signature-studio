@@ -1,5 +1,5 @@
 /** A small PNG writer for the data generators. Node only, no dependencies. */
-import { crc32, deflateSync } from 'node:zlib';
+import { crc32, deflateSync, inflateSync } from 'node:zlib';
 
 /** An RGB picture, 3 bytes a pixel. */
 export interface Picture {
@@ -10,6 +10,33 @@ export interface Picture {
 
 /** Makes a data URL from encoded bytes. */
 export const dataURL = (mime: string, bytes: Buffer): string => `data:${mime};base64,${bytes.toString('base64')}`;
+
+/** Compares generated PNG content without depending on the platform's zlib compression output. */
+export function pngContent(bytes: Buffer): Buffer {
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  if (!bytes.subarray(0, 8).equals(signature)) throw new Error('Invalid PNG signature.');
+  const parts: Buffer[] = [signature];
+  const imageData: Buffer[] = [];
+  let imageIndex = -1;
+  for (let offset = 8; offset < bytes.length;) {
+    if (offset + 12 > bytes.length) throw new Error('Truncated PNG chunk.');
+    const length = bytes.readUInt32BE(offset);
+    const end = offset + length + 12;
+    if (end > bytes.length) throw new Error('Truncated PNG chunk.');
+    const body = bytes.subarray(offset + 4, end - 4);
+    if (crc32(body) !== bytes.readUInt32BE(end - 4)) throw new Error('Invalid PNG checksum.');
+    if (body.toString('latin1', 0, 4) === 'IDAT') {
+      if (imageIndex < 0) imageIndex = parts.length;
+      imageData.push(body.subarray(4));
+    } else {
+      parts.push(bytes.subarray(offset, end));
+    }
+    offset = end;
+  }
+  if (imageIndex < 0) throw new Error('Missing PNG image data.');
+  parts.splice(imageIndex, 0, chunk('IDAT', inflateSync(Buffer.concat(imageData))));
+  return Buffer.concat(parts);
+}
 
 function chunk(type: string, data: Uint8Array): Buffer {
   const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);

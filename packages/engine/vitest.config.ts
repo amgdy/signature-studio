@@ -17,6 +17,10 @@ export default defineConfig({
     projects: [
       {
         extends: true,
+        test: { name: 'generators', include: ['test/generators/**/*.test.ts'], environment: 'node' },
+      },
+      {
+        extends: true,
         test: { name: 'unit', include: ['test/unit/**/*.test.ts'], browser: browser() },
       },
       {
