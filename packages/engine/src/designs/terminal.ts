@@ -80,7 +80,7 @@ export const terminalDesign = defineDesign({
         return tr(
           td(
             `<span style="${mono(11, 16, acc, true)}">${esc(k)}</span><br>${h}`,
-            `${mono(12, 18, DEV.text)}padding:0 0 4px 0;${shortText(h) && !s.cols3 && s.font === 'auto' && s.textSize === 'standard' ? 'white-space:nowrap;' : ''}`,
+            `${mono(12, 18, DEV.text)}padding:0 0 4px 0;`,
           ),
         );
       return tr(

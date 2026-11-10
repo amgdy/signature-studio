@@ -96,7 +96,7 @@ There are 36 designs. Every design supports 1, 2 and 3 columns, a typed or handw
 | Passport         | A passport data page with labelled fields and a signature line              |
 | Name Badge       | A "HELLO my name is" band                                                   |
 | Postcard         | A message, a stamp-shaped photo with a postmark and ruled address lines     |
-| Terminal         | A dark terminal window with a cursor that blinks and stops                  |
+| Terminal         | A dark terminal window with wrapping details and a blinking cursor          |
 | Code Editor      | A dark code editor with line numbers and a grey suggestion                  |
 | Agent            | An AI agent session that finds you as the answer                            |
 
