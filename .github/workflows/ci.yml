@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      audits:
+        description: Also run the slow audits (phone fit, one line, paste, contrast)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, type-check, test and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium for browser tests
+        run: pnpm --filter @signature-studio/engine exec playwright install --with-deps chromium
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - name: Data files match their generators
+        run: pnpm --filter @signature-studio/engine data:check
+      - name: Unit and golden tests
+        run: pnpm test
+      - run: pnpm build
+      - name: End-to-end tests
+        run: pnpm test:e2e
+      - name: Audits
+        if: github.event_name == 'workflow_dispatch' && inputs.audits
+        run: pnpm test:audit
+      - name: Keep the test reports when something fails
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          path: |
+            apps/studio/playwright-report
+            apps/studio/test-results
+            packages/engine/test/**/__screenshots__
+          if-no-files-found: ignore

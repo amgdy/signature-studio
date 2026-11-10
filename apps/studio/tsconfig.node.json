@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "rootDir": ".",
+    "outDir": "../../node_modules/.cache/tsc/studio-node",
+    "tsBuildInfoFile": "../../node_modules/.cache/tsc/studio-node.tsbuildinfo"
+  },
+  "include": [
+    "vite.config.ts",
+    "vite.config.test.ts",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "package.json",
+    "e2e"
+  ]
+}

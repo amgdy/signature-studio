@@ -1,0 +1,58 @@
+# Signature Studio signature file.
+# Open it in Signature Studio: Files > Open signature file.
+# A hand-written test file for the end-to-end tests: anything left out gets the defaults.
+signature: 1
+saved: 2025-01-01T00:00:00.000Z
+
+# Who you are
+details:
+  fullName: Riley Sample
+  title: Staff Engineer
+  company: Fabrikam
+
+# How to reach you
+contact:
+  email: riley.sample@fabrikam.com
+  phone: +1 425 555 0123
+
+# Message, sign-off, featured content and developer prompts
+extras:
+  tagline: Making the cloud feel simple
+
+# What shows in the signature
+show:
+  logo: true
+
+# The look: design, colours and options
+style:
+  template: executive
+  theme: ocean
+  cols: 2
+  optimize: false
+
+# Your photo and logo, as base64
+images:
+  logo:
+    type: image/png
+    data: |-
+      iVBORw0KGgoAAAANSUhEUgAAAQAAAACACAYAAADktbcKAAAEQElEQVR4nO3U4W0dVwwFYXeQRtNi
+      akvgHxK81j5ZAsI9l+Q3wBSwnHP3xw8AAAAAAAAAAAAAAAAAOJW//v7n3//b9DcBeEHFg/dDAA4l
+      8eD9EIAw6UfuRwA8TPpB+xkAAdKP148ACJB+rH4En5O+IWft6UL6oKL9mfT9OGdL76QPKd7XSd+N
+      /Td0IX1EAb9H+mbsvZ930sc7yXSL75C+FXvu5kL6cCeabvJV0ndiv81cSB/tZNNtvkL6Ruy1l3fS
+      x+pkutVnpG/DHju5kD5UR9PNXpG+C8/fyIX0kTqbbndH+iY8ex8X0geaYLrh76TvwXO3cSF9nEmm
+      W/5K+hY8cxcX0oeZaLrpG+k78LxNfCB9mImmm76RvgPP28SF9FEmm277k/QNeNYeLqQPskGNecoW
+      LqSPsUmdmd7BB9LH2KTOTO/gQvoQG9WaqQ1cSB9hs3rvNtH/A+kjbFbv3Sb6G8Nhar7Xp9sbwqHq
+      vtMnuxvCweq+0ye7G8Hhar/Pp5obQQO13+dTzQ2gifrv8oneBtBI/Xf5RG8DaKT+u3yit/jNtIE9
+      VrcWv6E2sMfq1sI31Q52WNlZ+MbawQ4rOwvfWDvYYWVn4RtrBzus7Cx6c21hvlWNRR+gLcy3qrHo
+      A7SF+VY1Fn2AtjDfqsaCD9EeZlvRV/BB2sNsK/oKPkh7mG1FX8EHaQ+zregr+CDtYbYVfQUfpD3M
+      tqKv4IO0h9lW9BV8kPYw24q+gg/SHmZb0VfwQdrDbCv6Cj5Ie5htRV/BB2kPs63oK/gg7WG2FX0F
+      H6Q9zLair+CDtIfZVvQVfJD2MNuKvoIP0h5mW9FX8EHaw2wr+go+SHuYbUVfwQdpD7Ot6Cv4IO1h
+      thV9RR+iLcy3qrHoA7SF+VY1Fn2AtjDfqsaiD9AW5lvVWPjm2sEOKzsL31g72GFlZ+Ebawc7rOws
+      fGPtYIeVncVvqg3ssbq1+A21gT1WtzaAZuq/yyd6G0Aj9d/lE70NoJH67/KJ3kbQRO33+VRzI2ig
+      9vt8qrkhHK7uO32yuyEcrO47fbK7MRyq5nt9uv0t6SNsVu/dJvp/IH2Ezeq920T/W9KH2KjWTG3g
+      lvQxNqkz0zv4QPoYm9SZ6R3ckj7IBjXmKVu4JX2Uyabb/iR9A561h1vSh5louukb6TvwvE18IH2Y
+      iaabvpG+A8/bxC3p40wy3fJX0rfgmbu4JX2gCaYb/k76Hjx3G7ekj9TZdLs70jfh2fu4JX2ojqab
+      vSJ9F56/kVvSx+pkutVnpG/DHjt5SfpoJ5tu8xXSN2KvvdySPtyJppt8lfSd2G8zt6SPd5LpFt8h
+      fSv23M1L0kcU8Hukb8be+7klfUjxvk76buy/oZekDyran0nfj3O2dEv6qIJ9TvqGnLWnl6SPKxRw
+      AOnH6+EDh5B+0B49cADpR+7hAwfhwQN4x4MHAAAAAAAAAAAAAADAJv4Dap753unWu4MAAAAASUVO
+      RK5CYII=

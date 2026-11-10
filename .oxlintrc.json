@@ -1,0 +1,77 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["eslint", "typescript", "unicorn", "oxc", "import", "promise", "react", "jsx-a11y", "vitest"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "perf": "warn"
+  },
+  "options": {
+    "typeAware": true,
+    "reportUnusedDisableDirectives": "error"
+  },
+  "env": { "browser": true, "es2024": true },
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/node_modules/**",
+    "**/coverage/**",
+    "**/test-results/**",
+    "**/playwright-report/**"
+  ],
+  "rules": {
+    "eqeqeq": ["error", "smart"],
+    "no-var": "error",
+    "prefer-const": "error",
+    "no-console": ["error", { "allow": ["warn", "error"] }],
+    "typescript/no-explicit-any": "error",
+    "typescript/consistent-type-imports": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/await-thenable": "error",
+    "typescript/no-unnecessary-type-assertion": "error",
+    "typescript/no-non-null-assertion": "warn",
+    "import/no-default-export": "error",
+    "import/no-duplicates": "error",
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }],
+    "react/react-in-jsx-scope": "off",
+    "react/rules-of-hooks": "error",
+    "react/exhaustive-deps": "error",
+    "react/jsx-key": "error",
+    "react/no-array-index-key": "warn",
+    "jsx-a11y/alt-text": "error",
+    "jsx-a11y/no-autofocus": "error"
+  },
+  "overrides": [
+    {
+      "files": ["**/vite.config.ts", "**/vitest.config.ts", "**/playwright.config.ts", "**/vite-env.d.ts"],
+      "rules": { "import/no-default-export": "off" }
+    },
+    {
+      "files": ["**/scripts/**", "**/vite/**", "**/*.config.ts"],
+      "env": { "node": true, "browser": false },
+      "rules": { "no-console": "off" }
+    },
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/e2e/**", "**/test/**"],
+      "rules": { "typescript/no-non-null-assertion": "off" }
+    },
+    {
+      "files": ["**/e2e/**"],
+      "rules": { "no-await-in-loop": "off" }
+    },
+    {
+      "files": ["**/src/components/ui/**"],
+      "rules": {
+        "eqeqeq": "off",
+        "no-underscore-dangle": "off",
+        "react/no-array-index-key": "off",
+        "react/jsx-no-constructed-context-values": "off",
+        "typescript/no-unsafe-type-assertion": "off",
+        "jsx-a11y/prefer-tag-over-role": "off",
+        "jsx-a11y/label-has-associated-control": "off",
+        "jsx-a11y/click-events-have-key-events": "off",
+        "jsx-a11y/no-noninteractive-element-interactions": "off"
+      }
+    }
+  ]
+}

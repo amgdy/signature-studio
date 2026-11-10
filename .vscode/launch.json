@@ -1,0 +1,90 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Studio in Chrome",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/apps/studio",
+      // Vite serves the engine package as /@fs/<absolute path>, so map that back to the file on disk.
+      "sourceMapPathOverrides": {
+        "http://localhost:5173/@fs/*": "/*",
+        "http://localhost:5173/*": "${workspaceFolder}/apps/studio/*"
+      },
+      "preLaunchTask": "Studio: dev server"
+    },
+    {
+      "name": "Studio in Edge",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/apps/studio",
+      "sourceMapPathOverrides": {
+        "http://localhost:5173/@fs/*": "/*",
+        "http://localhost:5173/*": "${workspaceFolder}/apps/studio/*"
+      },
+      "preLaunchTask": "Studio: dev server"
+    },
+    {
+      "name": "Studio unit test (current file)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/studio",
+      "program": "${workspaceFolder}/apps/studio/node_modules/vitest/vitest.mjs",
+      "args": ["run", "${fileBasename}"],
+      "autoAttachChildProcesses": true,
+      "smartStep": true,
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "console": "integratedTerminal"
+    },
+    {
+      // Starts the engine tests in browser mode and waits for "Attach to engine test browser".
+      // Use the "Engine test (current file)" compound below to run both.
+      "name": "Run engine test in browser",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/engine",
+      "program": "${workspaceFolder}/packages/engine/node_modules/vitest/vitest.mjs",
+      "args": ["run", "--inspect-brk=127.0.0.1:9229", "--no-file-parallelism", "--testTimeout=0", "${fileBasename}"],
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Attach to engine test browser",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9229,
+      "webRoot": "${workspaceFolder}/packages/engine",
+      "skipFiles": ["**/node_modules/**"]
+    },
+    {
+      "name": "E2E test (current file)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/apps/studio",
+      "program": "${workspaceFolder}/apps/studio/node_modules/@playwright/test/cli.js",
+      "args": ["test", "${fileBasename}", "--headed", "--workers=1", "--timeout=0"],
+      "skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+      "console": "integratedTerminal"
+    },
+    {
+      // The data generators in packages/engine/scripts. Node runs TypeScript directly.
+      "name": "Data script (current file)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/packages/engine",
+      "program": "${file}",
+      "args": ["--check"],
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Engine test (current file)",
+      "configurations": ["Attach to engine test browser", "Run engine test in browser"],
+      "stopAll": true
+    }
+  ]
+}

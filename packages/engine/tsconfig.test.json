@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node", "vitest/browser"],
+    "allowImportingTsExtensions": true,
+    "outDir": "../../node_modules/.cache/tsc/engine-test",
+    "tsBuildInfoFile": "../../node_modules/.cache/tsc/engine-test.tsbuildinfo"
+  },
+  "include": ["test", "scripts", "vitest.config.ts"],
+  "references": [{ "path": "./tsconfig.json" }]
+}

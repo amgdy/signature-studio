@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // Used by the "Studio in Chrome/Edge" launch configs. Vite shows errors in the page, so the
+      // matcher only waits for the server to be ready.
+      "label": "Studio: dev server",
+      "detail": "pnpm dev on http://localhost:5173",
+      "type": "shell",
+      "command": "pnpm dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": { "regexp": "^never-matches$" },
+        "background": { "activeBegins": true, "beginsPattern": "VITE v\\d", "endsPattern": "Local:\\s+http" }
+      }
+    },
+    {
+      "label": "Check",
+      "detail": "Format check, lint, type check, unit and golden tests",
+      "type": "shell",
+      "command": "pnpm check",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Build",
+      "detail": "apps/studio/dist/index.html",
+      "type": "shell",
+      "command": "pnpm build",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    }
+  ]
+}

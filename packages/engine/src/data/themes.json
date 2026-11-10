@@ -1,0 +1,325 @@
+{
+ "aurora": {
+  "name": "Aurora",
+  "gradient": true,
+  "colors": [
+   "#0F6CBD",
+   "#7160E8",
+   "#C239B3"
+  ],
+  "group": "tech"
+ },
+ "msblue": {
+  "name": "Microsoft Blue",
+  "gradient": true,
+  "colors": [
+   "#0F6CBD",
+   "#2899F5"
+  ],
+  "group": "tech"
+ },
+ "executive": {
+  "name": "Navy & Gold",
+  "gradient": true,
+  "colors": [
+   "#0E2A52",
+   "#2C5AA0",
+   "#C9A227"
+  ],
+  "group": "calm"
+ },
+ "copilot": {
+  "name": "Copilot Spectrum",
+  "gradient": true,
+  "colors": [
+   "#2D7FF9",
+   "#8B5CF6",
+   "#E5508A",
+   "#F9A23C"
+  ],
+  "group": "tech"
+ },
+ "foundry": {
+  "name": "Foundry Violet",
+  "gradient": true,
+  "colors": [
+   "#3A2BD9",
+   "#8B5CF6",
+   "#22A6F2"
+  ],
+  "group": "tech"
+ },
+ "azure": {
+  "name": "Azure",
+  "gradient": true,
+  "colors": [
+   "#0067B8",
+   "#0094F0",
+   "#50E6FF"
+  ],
+  "group": "tech"
+ },
+ "github": {
+  "name": "GitHub",
+  "gradient": true,
+  "colors": [
+   "#0969DA",
+   "#8250DF",
+   "#BF3989"
+  ],
+  "group": "tech"
+ },
+ "teal": {
+  "name": "Teal",
+  "gradient": true,
+  "colors": [
+   "#03787C",
+   "#00B7C3"
+  ],
+  "group": "calm"
+ },
+ "sunrise": {
+  "name": "Desert Sunrise",
+  "gradient": true,
+  "colors": [
+   "#C2410C",
+   "#F7630C",
+   "#FFB900"
+  ],
+  "group": "warm"
+ },
+ "graphite": {
+  "name": "Graphite",
+  "gradient": true,
+  "colors": [
+   "#242424",
+   "#8A8886"
+  ],
+  "group": "calm"
+ },
+ "sage": {
+  "name": "Sage",
+  "gradient": true,
+  "colors": [
+   "#2F5A43",
+   "#3F6B52",
+   "#5E8C70"
+  ],
+  "group": "nature"
+ },
+ "coral": {
+  "name": "Coral",
+  "gradient": true,
+  "colors": [
+   "#9E2F50",
+   "#B3365B",
+   "#C8553D"
+  ],
+  "group": "warm"
+ },
+ "navy": {
+  "name": "Navy",
+  "gradient": true,
+  "colors": [
+   "#13294B",
+   "#1B3A6B",
+   "#2F5597"
+  ],
+  "group": "calm"
+ },
+ "forest": {
+  "name": "Forest",
+  "gradient": true,
+  "colors": [
+   "#14532D",
+   "#1E6B3A",
+   "#2E7D4F"
+  ],
+  "group": "nature"
+ },
+ "slate": {
+  "name": "Slate",
+  "gradient": true,
+  "colors": [
+   "#2B3440",
+   "#3D4A5C",
+   "#56657A"
+  ],
+  "group": "calm"
+ },
+ "ocean": {
+  "name": "Ocean",
+  "gradient": true,
+  "colors": [
+   "#005B96",
+   "#00787F"
+  ],
+  "group": "calm"
+ },
+ "ember": {
+  "name": "Ember",
+  "gradient": true,
+  "colors": [
+   "#B3261E",
+   "#A85000"
+  ],
+  "group": "warm"
+ },
+ "grape": {
+  "name": "Grape",
+  "gradient": true,
+  "colors": [
+   "#5B2A86",
+   "#A1206E"
+  ],
+  "group": "rich"
+ },
+ "brass": {
+  "name": "Brass",
+  "gradient": true,
+  "colors": [
+   "#4F3C00",
+   "#806100"
+  ],
+  "group": "warm"
+ },
+ "sunset": {
+  "name": "Sunset",
+  "gradient": true,
+  "colors": [
+   "#6A1B9A",
+   "#B0195A",
+   "#B84500"
+  ],
+  "group": "warm"
+ },
+ "lights": {
+  "name": "Northern Lights",
+  "gradient": true,
+  "colors": [
+   "#00695C",
+   "#1565C0",
+   "#7B1FA2"
+  ],
+  "group": "nature"
+ },
+ "prism": {
+  "name": "Prism",
+  "gradient": true,
+  "colors": [
+   "#0F6CBD",
+   "#107C41",
+   "#8A6D00",
+   "#C50F1F"
+  ],
+  "group": "tech"
+ },
+ "dusk": {
+  "name": "Dusk",
+  "gradient": true,
+  "colors": [
+   "#2E3192",
+   "#6A1B9A",
+   "#A3165A"
+  ],
+  "group": "rich"
+ },
+ "noir": {
+  "name": "Noir",
+  "gradient": true,
+  "colors": [
+   "#000000",
+   "#3D3D3D"
+  ],
+  "group": "calm"
+ },
+ "indigo": {
+  "name": "Indigo",
+  "gradient": true,
+  "colors": [
+   "#312E81",
+   "#4F46E5"
+  ],
+  "group": "calm"
+ },
+ "espresso": {
+  "name": "Espresso",
+  "gradient": true,
+  "colors": [
+   "#4E342E",
+   "#6D4C41",
+   "#A1887F"
+  ],
+  "group": "warm"
+ },
+ "citrus": {
+  "name": "Citrus",
+  "gradient": true,
+  "colors": [
+   "#3E6B00",
+   "#5E8C00",
+   "#8DA800"
+  ],
+  "group": "nature"
+ },
+ "berry": {
+  "name": "Berry",
+  "gradient": true,
+  "colors": [
+   "#6D1A3B",
+   "#8E244D",
+   "#5B2A86"
+  ],
+  "group": "rich"
+ },
+ "emerald": {
+  "name": "Emerald & Gold",
+  "gradient": true,
+  "colors": [
+   "#004D40",
+   "#008568",
+   "#C9A64C"
+  ],
+  "group": "rich"
+ },
+ "midnight": {
+  "name": "Midnight",
+  "gradient": true,
+  "colors": [
+   "#0B1220",
+   "#243B53",
+   "#487C8C"
+  ],
+  "group": "calm"
+ },
+ "terracotta": {
+  "name": "Terracotta",
+  "gradient": true,
+  "colors": [
+   "#7F3B2D",
+   "#B86548",
+   "#C58B68"
+  ],
+  "group": "warm"
+ },
+ "olive": {
+  "name": "Olive",
+  "gradient": true,
+  "colors": [
+   "#414B25",
+   "#77813C",
+   "#A69A54"
+  ],
+  "group": "nature"
+ },
+ "rose": {
+  "name": "Rose",
+  "gradient": true,
+  "colors": [
+   "#793B58",
+   "#AD587A",
+   "#C98A9C"
+  ],
+  "group": "rich"
+ }
+}

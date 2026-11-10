@@ -1,0 +1,63 @@
+name: Deploy the Studio to GitHub Pages
+
+# Deploys after CI passes for a push to main, or when started by hand from the Actions tab.
+# One-time setup: Settings > Pages > Build and deployment > Source: GitHub Actions.
+# The custom domain (signature-studio.amgdy.com) is set in Settings > Pages, not in a CNAME file,
+# so forks publish to their own address instead of claiming it.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Only a green CI run for a push to this repository's main branch, never a pull request from a fork.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+        env:
+          STUDIO_BUILD_RUN_ID: ${{ github.event.workflow_run.id || github.run_id }}
+          STUDIO_BUILD_RUN_NUMBER: ${{ github.event.workflow_run.run_number || github.run_number }}
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: apps/studio/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

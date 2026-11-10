@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
+    "rootDir": ".",
+    "outDir": "../../node_modules/.cache/tsc/studio",
+    "tsBuildInfoFile": "../../node_modules/.cache/tsc/studio.tsbuildinfo",
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src"],
+  "references": [{ "path": "../../packages/engine" }]
+}

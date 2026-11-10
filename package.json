@@ -1,0 +1,33 @@
+{
+  "name": "signature-studio-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Personal HTML email signatures with compatibility profiles, built privately in the browser.",
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@12.17.0",
+  "engines": {
+    "node": ">=24.11"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @signature-studio/studio dev",
+    "build": "pnpm --recursive --sort build",
+    "preview": "pnpm --filter @signature-studio/studio preview",
+    "typecheck": "tsc --build",
+    "lint": "oxlint --type-aware",
+    "lint:fix": "oxlint --type-aware --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "pnpm --recursive test",
+    "test:e2e": "pnpm --filter @signature-studio/studio test:e2e",
+    "test:audit": "pnpm --filter @signature-studio/engine test:audit",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "oxlint": "^1.91.0",
+    "oxlint-tsgolint": "^7.0.2005",
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2"
+  }
+}

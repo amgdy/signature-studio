@@ -1,0 +1,7 @@
+pnpm-lock.yaml
+**/dist/
+**/coverage/
+**/test-results/
+**/playwright-report/
+packages/engine/src/data/*.json
+packages/engine/assets-src/

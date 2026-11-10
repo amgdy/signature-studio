@@ -1,0 +1,156 @@
+# The built-in styles in the gallery, in the order they show.
+# A style is a look: a design, colours and options. It never holds your details.
+# Style keys are the ones in the style section of a signature file; see docs/DEVELOPMENT.md.
+# Keep each id: saved signature files refer to the style they use by its id.
+# To add a style, copy an entry, give it a new id that starts with p-, and run pnpm test.
+
+signature-styles: 1
+styles:
+  - id: p-layers
+    name: Fluent Layers
+    tag: Photo on a rounded card over a tilted gradient card, with a soft glare
+    template: executive
+    theme: copilot
+    cols: 2
+    photoShape: layers
+    photoAnim: shine
+    photoSize: L
+    iconStyle: soft
+    nameStyle: hand
+  - id: p-sage-masthead
+    name: Sage Masthead
+    tag: Serif masthead on a soft sage card
+    template: editorial
+    theme: sage
+    bgMode: solid
+    bgColor: tint
+    photoShape: circle
+  - id: p-sunrise-ticket
+    name: Sunrise Boarding Pass
+    tag: Boarding pass in Desert Sunrise
+    template: ticket
+    theme: sunrise
+    photoShape: squircle
+  - id: p-midnight-exec
+    name: Midnight Executive
+    tag: Executive in two columns on a midnight card
+    template: executive
+    theme: executive
+    cols: 2
+    iconStyle: glyph
+    bgMode: solid
+    bgColor: '#0B1F3A'
+    photoShape: circle
+    photoAnim: none
+  - id: p-slice-aurora
+    name: Aurora Slice
+    tag: Slanted photo slice with a comet ring
+    template: aurora
+    theme: aurora
+    photoShape: slice
+    photoAnim: comet
+    iconStyle: fluent
+  - id: p-duotone-foundry
+    name: Duotone Foundry
+    tag: Hexagon duotone photo, pulsing ring
+    template: foundry
+    theme: foundry
+    photoShape: hexagon
+    photoLook: duotone
+    photoAnim: pulse
+    iconStyle: rounded
+  - id: p-dark-github
+    name: GitHub Dark
+    tag: Two columns on a graphite card
+    template: github
+    theme: github
+    cols: 2
+    iconStyle: outline
+    bgMode: solid
+    bgColor: '#1F2328'
+  - id: p-leader-arch
+    name: Signed Leadership
+    tag: Arch photo drawn round, handwritten name
+    template: leader
+    theme: executive
+    photoShape: arch
+    photoAnim: draw
+    nameStyle: hand
+  - id: p-polaroid
+    name: Polaroid Classic
+    tag: A large tilted instant photo with a shine
+    template: classic
+    theme: msblue
+    photoShape: polaroid
+    photoAnim: shine
+    photoSize: L
+    iconStyle: circle
+  - id: p-passport-hand
+    name: Signed Passport
+    tag: Passport data page, handwritten signature, three columns
+    template: passport
+    theme: navy
+    cols: 3
+    nameStyle: hand
+    iconStyle: ring
+  - id: p-postcard-sunset
+    name: Sunset Postcard
+    tag: Postcard with a stamp photo in Sunset tones
+    template: postcard
+    theme: sunset
+    nameStyle: hand
+    iconStyle: soft
+  - id: p-badge-prism
+    name: Prism Badge
+    tag: Name badge, two columns, Prism colours
+    template: badge
+    theme: prism
+    cols: 2
+    iconStyle: brand
+  - id: p-terminal
+    name: Green Terminal
+    tag: neofetch-style terminal with a blinking cursor
+    template: terminal
+    theme: forest
+  - id: p-editor-3
+    name: Editor in Three
+    tag: Code editor with your links in the activity bar and a photo preview
+    template: editor
+    theme: msblue
+    cols: 3
+    iconStyle: outline
+  - id: p-agent
+    name: Agent Session
+    tag: An AI agent finds you, with a handwritten name
+    template: agent
+    theme: copilot
+    cols: 2
+    nameStyle: hand
+  - id: p-exec-3col
+    name: Executive in Three
+    tag: Who you are, how to reach you and your links in three columns
+    template: executive
+    theme: ocean
+    cols: 3
+    iconStyle: circle
+    nameStyle: hand
+  - id: p-squircle-tiles
+    name: Tinted Tiles
+    tag: Squircle photo on a theme-tint card
+    template: tiles
+    theme: azure
+    photoShape: squircle
+    iconStyle: tile
+    bgMode: solid
+    bgColor: tint
+  - id: p-mono-minimal
+    name: Monochrome Card
+    tag: Black-and-white photo, text labels, cloud card
+    template: executive
+    theme: graphite
+    photoLook: mono
+    photoShape: rounded
+    iconStyle: labels
+    bgMode: solid
+    bgColor: '#F5F7FA'
+    cols: 2
