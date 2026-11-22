@@ -80,7 +80,7 @@ test('browser storage fallback warns when work is only kept for this tab', async
     // oxlint-disable-next-line typescript/unbound-method -- Reflect.apply supplies the Storage receiver below.
     const original = Storage.prototype.setItem;
     Storage.prototype.setItem = function (key, value) {
-      if (this === local && key.startsWith('signature-studio.'))
+      if (this === local && key === 'signature-studio.state.v5')
         throw new DOMException('Storage is full', 'QuotaExceededError');
       Reflect.apply(original, this, [key, value]);
     };

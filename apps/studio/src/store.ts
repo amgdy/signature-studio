@@ -32,10 +32,15 @@ interface BrowserStorageStatus {
 let storageStatus: BrowserStorageStatus = { mode: 'local' };
 const storageListeners = new Set<() => void>();
 const memoryStorage = new Map<string, string>();
+const storageModes = new Map<string, BrowserStorageMode>();
+const workStorageKeys = new Set([STATE_KEY, STYLES_KEY]);
 
-function publishStorageMode(mode: BrowserStorageMode): void {
-  if (storageStatus.mode === mode) return;
-  storageStatus = { mode };
+function publishStorageMode(name: string, mode: BrowserStorageMode): void {
+  storageModes.set(name, mode);
+  const modes = new Set([...workStorageKeys].map((key) => storageModes.get(key)));
+  const next = modes.has('memory') ? 'memory' : modes.has('session') ? 'session' : 'local';
+  if (storageStatus.mode === next) return;
+  storageStatus = { mode: next };
   storageListeners.forEach((listener) => listener());
 }
 
@@ -61,7 +66,7 @@ const fallbackStorage: StateStorage = {
     try {
       const local = browserStorage('localStorage')?.getItem(name);
       if (local !== null && local !== undefined) {
-        publishStorageMode('local');
+        publishStorageMode(name, 'local');
         return local;
       }
     } catch {
@@ -70,7 +75,7 @@ const fallbackStorage: StateStorage = {
     try {
       const session = browserStorage('sessionStorage')?.getItem(name);
       if (session !== null && session !== undefined) {
-        publishStorageMode('session');
+        publishStorageMode(name, 'session');
         return session;
       }
     } catch {
@@ -78,7 +83,7 @@ const fallbackStorage: StateStorage = {
     }
     const memory = memoryStorage.get(name);
     if (memory !== undefined) {
-      publishStorageMode('memory');
+      publishStorageMode(name, 'memory');
       return memory;
     }
     return null;
@@ -88,7 +93,7 @@ const fallbackStorage: StateStorage = {
       const local = browserStorage('localStorage');
       if (!local) throw new Error('localStorage is unavailable');
       local.setItem(name, value);
-      publishStorageMode('local');
+      publishStorageMode(name, 'local');
       return;
     } catch {
       // Try session storage before using memory; the UI warns when data will not survive this tab.
@@ -102,13 +107,13 @@ const fallbackStorage: StateStorage = {
       } catch {
         // The session copy remains available and the visible status explains its lifetime.
       }
-      publishStorageMode('session');
+      publishStorageMode(name, 'session');
       return;
     } catch {
       // Surface the in-memory lifetime through the same status shown beside the backup action.
     }
     memoryStorage.set(name, value);
-    publishStorageMode('memory');
+    publishStorageMode(name, 'memory');
   },
   removeItem: (name) => {
     for (const which of ['localStorage', 'sessionStorage'] as const) {
@@ -119,6 +124,15 @@ const fallbackStorage: StateStorage = {
       }
     }
     memoryStorage.delete(name);
+    storageModes.delete(name);
+    if (workStorageKeys.has(name)) {
+      const modes = new Set([...workStorageKeys].map((key) => storageModes.get(key)));
+      const next = modes.has('memory') ? 'memory' : modes.has('session') ? 'session' : 'local';
+      if (storageStatus.mode !== next) {
+        storageStatus = { mode: next };
+        storageListeners.forEach((listener) => listener());
+      }
+    }
   },
 };
 

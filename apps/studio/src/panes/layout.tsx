@@ -816,7 +816,7 @@ export function LogoPicker() {
           </Button>
         ) : null}
       </div>
-      {src && (isMain || template !== 'minimal') ? (
+      {src && (isMain || (template !== 'minimal' && template !== 'monogram')) ? (
         <div>
           <Button
             variant="outline"

@@ -168,9 +168,17 @@ export function build(state: StateInput | SignatureState, opts?: BuildOptions): 
     ? { ...th, accent: onDark ? th.accent : fit(th.accent, surf, 4.6), accentDark: fit(th.accentDark, surfD, 4.6) }
     : th;
   const specs = gen ? replySpecs(s, thA, o, s.replyStyle) : restyle(tpl.assets(sT, thA, v, o), sT, thA, o);
-  if (featuredLogo && specs.photo?.kind === 'photo') {
-    specs.photo = { kind: 'logo', size: specs.photo.size, src: fv.logo.src };
-    delete specs.logo;
+  if (featuredLogo) {
+    if (specs.photo?.kind === 'photo') {
+      specs.photo = { kind: 'logo', size: specs.photo.size, src: fv.logo.src };
+      delete specs.logo;
+    } else if (
+      !s.show.photo &&
+      !gen &&
+      tpl.assets({ ...sT, show: { ...sT.show, photo: true } }, thA, v, o).photo?.kind === 'photo'
+    ) {
+      delete specs.logo;
+    }
   }
   if (s.cols3) Object.assign(specs, col3Specs(s, thA, o, tpl));
   if (v === 'new')

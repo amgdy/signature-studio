@@ -428,6 +428,28 @@ test('a company logo can replace the featured photo without duplicating the smal
   await expect(signature(page).getByRole('img', { name: 'Photo of Sam Taylor' })).toBeVisible();
 });
 
+test('Monogram does not offer a logo as its main image but can switch back from a saved logo preference', async ({
+  page,
+}) => {
+  await open(page);
+  await pickDesign(page, 'monogram');
+  await goTo(page, 'photo');
+  await page.getByTestId('logo-file').setInputFiles(fixture('logo.png'));
+  await expect(page.getByRole('button', { name: 'Use logo as main image' })).toHaveCount(0);
+
+  await page.getByTestId('step-design').click();
+  await pickDesign(page, 'aurora');
+  await goTo(page, 'photo');
+  await page.getByRole('button', { name: 'Use logo as main image' }).click();
+  await page.getByTestId('step-design').click();
+  await pickDesign(page, 'monogram');
+  await goTo(page, 'photo');
+  await expect(page.getByRole('button', { name: 'Use logo as main image' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Use personal photo instead' })).toBeVisible();
+  await page.getByRole('button', { name: 'Use personal photo instead' }).click();
+  await expect(page.getByRole('button', { name: 'Use personal photo instead' })).toHaveCount(0);
+});
+
 test('credential badges stay in one row on phones and are omitted in replies', async ({ page }) => {
   await open(page);
   await goTo(page, 'photo');

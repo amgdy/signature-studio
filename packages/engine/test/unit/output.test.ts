@@ -295,6 +295,28 @@ describe('uploaded logo', () => {
     });
     expect('logo' in r.images).toBe(false);
   });
+
+  test('hides the secondary logo when the featured photo is disabled', async () => {
+    const src = await testLogo();
+    const aurora = await build({
+      ...FIXTURE_PROFILE,
+      template: 'aurora',
+      featuredImage: 'logo',
+      logo: { src },
+      show: { logo: true, photo: false },
+    });
+    expect('photo' in aurora.images).toBe(false);
+    expect('logo' in aurora.images).toBe(false);
+
+    const minimal = await build({
+      ...FIXTURE_PROFILE,
+      template: 'minimal',
+      featuredImage: 'logo',
+      logo: { src },
+      show: { logo: true, photo: false },
+    });
+    expect('logo' in minimal.images).toBe(true);
+  });
 });
 
 test('a photo has useful alt text when the name is blank', async () => {
