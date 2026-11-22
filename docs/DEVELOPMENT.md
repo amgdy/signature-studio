@@ -30,7 +30,7 @@ packages/engine/          the signature engine (TypeScript, no UI)
   src/state.ts            DEFAULT_STATE and normalize()
   src/build.ts            build(), view state and finalize()
   src/options.ts          every option list
-  src/compatibility.ts    Outlook client profiles and the paste model
+  src/compatibility.ts    Email client profiles and the Outlook paste model
   src/designs/            one file per design; kit.ts has defineDesign() and card()
   src/html.ts layout.ts   markup and table layout helpers
   src/color.ts icons.ts   palettes, contrast and icons
@@ -49,6 +49,7 @@ apps/studio/              the Studio (React 19, shadcn/ui, Tailwind CSS 4, Zusta
 ```
 
 The Studio imports the engine as source through `src/engine.ts`. There is no separate engine build.
+Browser storage prefers local storage, falls back to session storage and then memory, and reports the active storage lifetime in the Use section. Signature and company-template YAML exports remain local downloads.
 
 | Tool                                   | Used for                                                       |
 | -------------------------------------- | -------------------------------------------------------------- |
@@ -124,6 +125,8 @@ Fluent-based Outlook apps also apply `box-sizing:border-box` to everything, so c
 - [Microsoft: fonts and fallback stacks](https://learn.microsoft.com/dynamics365/customer-insights/journeys/use-custom-fonts). The Studio uses local font stacks only.
 - [Microsoft: animated graphics in Outlook](https://support.microsoft.com/en-au/outlook/the-animated-graphic-in-my-e-mail-message-doesn-t-work). GIFs can play when animation is on. That doesn't prove APNG support.
 - [Microsoft: picture blocking in classic Outlook](https://support.microsoft.com/en-us/outlook/block-or-unblock-automatic-picture-downloads-in-classic-outlook-email-messages). Hosted images may be blocked.
+- [Apple: signatures on Mac](https://support.apple.com/guide/mail/mail11943/mac) documents formatting, links and images. [iPhone](https://support.apple.com/guide/iphone/iph80dabb18b/ios) and [iPad](https://support.apple.com/guide/ipad/ipad63538f0f/ipados) signature settings support text only.
+- [Can I email: embedded images](https://www.caniemail.com/features/image-base64/) tests received mail, not the Apple Mail signature editor. The Studio does not model native Mail paste or promise that the editor keeps pasted image data or animation.
 
 The 11 px minimum, the 343 px phone width and the 400,000-byte size budget are Studio policies, not Outlook limits. The client profiles and the paste model are plain data in `src/compatibility.ts`. To add another email client, extend that data and its tests. Browser checks don't run Word or native Outlook, so paste, send, reply and forward a real test when you change layout.
 

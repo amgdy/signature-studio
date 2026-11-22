@@ -1,5 +1,5 @@
-/** Reviewed sources, not a promise that every Outlook build renders identically. */
-export const COMPATIBILITY_REVIEWED = '2026-11-09';
+/** Reviewed sources, not a promise that every client renders identically. */
+export const COMPATIBILITY_REVIEWED = '2026-11-22';
 
 export const COMPATIBILITY_SOURCES = [
   {
@@ -14,6 +14,10 @@ export const COMPATIBILITY_SOURCES = [
     title: 'Microsoft: blocked external pictures in classic Outlook',
     url: 'https://support.microsoft.com/en-us/outlook/block-or-unblock-automatic-picture-downloads-in-classic-outlook-email-messages',
   },
+  { title: 'Apple: signatures in Mail on Mac', url: 'https://support.apple.com/guide/mail/mail11943/mac' },
+  { title: 'Apple: signatures on iPhone', url: 'https://support.apple.com/guide/iphone/iph80dabb18b/ios' },
+  { title: 'Apple: signatures on iPad', url: 'https://support.apple.com/guide/ipad/ipad63538f0f/ipados' },
+  { title: 'Can I email: embedded base64 image rendering', url: 'https://www.caniemail.com/features/image-base64/' },
 ] as const;
 
 export const CLIENT_PROFILES = [
@@ -21,6 +25,7 @@ export const CLIENT_PROFILES = [
     id: 'outlook-new-web',
     name: 'New Outlook and Outlook on the web',
     family: 'Outlook',
+    profile: 'outlook',
     layout:
       'Inline table layouts. Our paste model removes classes, stylesheets, non-image floats and span/link nowrap.',
     fonts: 'Local font stacks with a generic fallback. Do not depend on downloaded web fonts.',
@@ -33,6 +38,7 @@ export const CLIENT_PROFILES = [
     id: 'outlook-classic',
     name: 'Classic Outlook for Windows',
     family: 'Outlook',
+    profile: 'outlook-classic',
     layout:
       'Use the conservative Word-compatible subset: tables, inline styles and explicit image dimensions. Rounded corners may become square.',
     fonts:
@@ -48,6 +54,7 @@ export const CLIENT_PROFILES = [
     id: 'outlook-mac',
     name: 'Outlook for Mac',
     family: 'Outlook',
+    profile: 'outlook',
     layout:
       'Inline tables. Our observed paste model removes max-width; image width and height must remain proportional.',
     fonts: 'Windows fonts may be absent. The next installed family in the stack is used.',
@@ -59,6 +66,7 @@ export const CLIENT_PROFILES = [
     id: 'outlook-mobile',
     name: 'Outlook on iOS and Android',
     family: 'Outlook',
+    profile: 'outlook',
     layout:
       'Check the received HTML at phone width. Mobile signature editors and received-message rendering are different surfaces.',
     fonts: 'Use fallback stacks; desktop font availability is not assumed.',
@@ -68,6 +76,32 @@ export const CLIENT_PROFILES = [
       'App versions and accessibility settings can change animation. Avoid APNG revert-to-previous frames, based on the project’s iPhone observations.',
     validation:
       '343 px is our test width, not an Outlook guarantee. Native mobile compose, paste and receive tests remain manual.',
+  },
+  {
+    id: 'apple-mail-mac',
+    name: 'Apple Mail on Mac',
+    family: 'Apple Mail',
+    profile: 'apple-mail',
+    layout:
+      'The signature editor supports formatted text and links. Paste the rendered signature, not the HTML source. Verify tables and spacing after saving.',
+    fonts:
+      'Turn off “Always match my default message font” to retain pasted styling. Fonts still depend on what is installed.',
+    images:
+      'The Mac editor accepts images. Received-message support for embedded images does not prove that the signature editor preserves pasted image data.',
+    motion: 'Verify APNG after saving and sending; use a still signature if motion is not reliable.',
+    validation: 'Send in rich text, then check the received message, dark mode, image delivery, links and replies.',
+  },
+  {
+    id: 'apple-mail-mobile',
+    name: 'Apple Mail on iPhone and iPad',
+    family: 'Apple Mail',
+    profile: 'apple-mail',
+    layout: 'The signature editor is text only, even when the app can display rich signatures in received mail.',
+    fonts: 'Custom type, colours and spacing are not supported in the signature editor.',
+    images: 'Photos, logos, icons and handwritten names are not supported in the signature editor.',
+    motion: 'The text-only signature editor does not support animation.',
+    validation:
+      'Use Plain text, then send a test from the device. Verify any address or URL you expect to become a link.',
   },
 ] as const;
 

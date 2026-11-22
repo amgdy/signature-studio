@@ -12,6 +12,7 @@ import {
   ICON_STYLES,
   ICON_WEIGHTS,
   LOOKS,
+  MAX_BADGES,
   PHOTO_SIZES,
   REPLY_STYLES,
   SHAPES,
@@ -24,7 +25,7 @@ import type { HostingMode, Placement, SignatureState } from './types.ts';
  * The details are a made-up sample person. Keep your own in a signature file: save it from the Studio's Files section.
  */
 export const DEFAULT_STATE: SignatureState = {
-  emailProfile: 'outlook',
+  emailProfiles: ['outlook', 'outlook-classic'],
   template: 'aurora',
   ...themeSettings('aurora'),
   photoAnim: 'auto',
@@ -38,6 +39,8 @@ export const DEFAULT_STATE: SignatureState = {
   cols: 'auto',
   photoPos: 'column',
   photoSize: 'M',
+  featuredImage: 'photo',
+  badges: [],
   replyStyle: 'line',
   iconStyle: 'auto',
   iconFamily: 'standard',
@@ -186,7 +189,15 @@ export function normalize(input?: unknown): SignatureState {
   /* text fields always become strings; other values are copied as they are, and the checks below fix them */
   for (const k of Object.keys(st)) {
     const v = st[k];
-    if (k === UNSAFE_KEY || k === 'theme' || k === 'customColors') continue;
+    if (
+      k === UNSAFE_KEY ||
+      k === 'theme' ||
+      k === 'customColors' ||
+      k === 'emailProfile' ||
+      k === 'emailProfiles' ||
+      k === 'badges'
+    )
+      continue;
     if (k === 'show' || k === 'photo' || k === 'logo' || k === 'hosting' || k === 'place') assignFields(s[k], v || {});
     else if (v !== undefined && v !== null) Reflect.set(s, k, TEXT_KEYS.has(k) ? textOf(v) : v);
   }
@@ -218,7 +229,21 @@ export function normalize(input?: unknown): SignatureState {
   }
   if (!ICON_STYLES.includes(s.iconStyle)) s.iconStyle = 'auto';
   if (!ICON_FAMILY_OPTIONS.some((f) => f.id === s.iconFamily)) s.iconFamily = 'standard';
-  if (!EMAIL_PROFILE_OPTIONS.some((p) => p.id === s.emailProfile)) s.emailProfile = 'outlook';
+  const profiles: readonly unknown[] = Array.isArray(st['emailProfiles']) ? st['emailProfiles'] : [];
+  const selected = EMAIL_PROFILE_OPTIONS.filter((p) => profiles.includes(p.id)).map((p) => p.id);
+  if (selected.length) s.emailProfiles = selected;
+  if (s.featuredImage !== 'logo') s.featuredImage = 'photo';
+  const badges: readonly unknown[] = Array.isArray(st['badges']) ? st['badges'] : [];
+  for (const badge of badges) {
+    if (!isRecord(badge) || typeof badge['src'] !== 'string' || !IMAGE_SRC.test(badge['src'])) continue;
+    s.badges.push({
+      src: badge['src'],
+      name: textOf(badge['name']).slice(0, 120),
+      url: textOf(badge['url']).slice(0, 2048),
+      visible: badge['visible'] !== false,
+    });
+    if (s.badges.length === MAX_BADGES) break;
+  }
   if (!ICON_WEIGHTS.includes(s.iconWeight)) s.iconWeight = 'auto';
   if (!ICON_COLORS.includes(s.iconColor)) s.iconColor = 'auto';
   if (!SHAPES.includes(s.photoShape)) s.photoShape = 'auto';

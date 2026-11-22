@@ -1,9 +1,11 @@
 import { mix, panelOf } from './color.ts';
 import { esc, f, img, lineRows, link, nb, pretty, renderContext, tbl, td, teamsUrl, telOf, tr, url } from './html.ts';
 import type { ContactKind, IconKind, SocialKind } from './icons.ts';
+import { BADGE_SIZE } from './options.ts';
 import type {
   AssetTokens,
   BuildOptions,
+  CredentialBadge,
   Design,
   ExtraKind,
   ItemIndex,
@@ -463,6 +465,42 @@ export function extrasHtml(s: SignatureState, th: Theme, P: Palette, tpl: Pick<D
   return tbl(groups.map((g, i) => tr(td(g, i ? 'padding-top:8px;' : ''))).join(''), `border-top:1px solid ${P.line};`);
 }
 
+/** Optional public verification link. Raw input stays editable, but only a safe web URL becomes a link. */
+export function badgeVerificationUrl(value: string): string {
+  const input = value.trim();
+  if (!input || (input.includes('://') && !/^https?:\/\//i.test(input))) return '';
+  try {
+    const parsed = new URL(url(input));
+    return /^https?:$/.test(parsed.protocol) && !parsed.username && !parsed.password && parsed.hostname.includes('.')
+      ? parsed.href
+      : '';
+  } catch {
+    return '';
+  }
+}
+
+export function badgeName(badge: CredentialBadge, index: number): string {
+  return badge.name.trim() || `Award or certificate ${index + 1}`;
+}
+
+export function badgesHtml(badges: readonly CredentialBadge[], A: AssetTokens, P: Palette): string {
+  if (!badges.some((badge) => badge.visible)) return '';
+  return tbl(
+    tr(
+      badges
+        .map((badge, i) => ({ badge, i }))
+        .filter(({ badge }) => badge.visible)
+        .map(({ badge, i }) => {
+          const name = badgeName(badge, i);
+          const image = img(A[`badge_${i}`], BADGE_SIZE, BADGE_SIZE, name);
+          const href = badgeVerificationUrl(badge.url);
+          return td(href ? link(href, image, P.body, undefined, name) : image, i ? 'padding-left:8px;' : '');
+        })
+        .join(''),
+    ),
+  );
+}
+
 /** The plain-text version of the signature, for email clients that do not show HTML. */
 export function plainText(s: SignatureState, v: Version): string {
   const L: string[] = [];
@@ -499,6 +537,11 @@ export function plainText(s: SignatureState, v: Version): string {
   if (s.booking && s.show.booking) L.push(`Book time: ${url(s.booking)}`);
   if (s.show.tagline && s.tagline) L.push(s.tagline);
   if (s.banner) L.push(s.banner + (s.bannerUrl ? `: ${url(s.bannerUrl)}` : ''));
+  s.badges.forEach((badge, i) => {
+    if (!badge.visible) return;
+    const href = badgeVerificationUrl(badge.url);
+    L.push(badgeName(badge, i) + (href ? `: ${href}` : ''));
+  });
   if (s.disclaimer) L.push('', s.disclaimer);
   return L.join('\n');
 }
@@ -545,9 +588,15 @@ export function psz(s: PhotoScale, n: number): number {
 }
 
 /** The photo image at `size` (before scaling), with alt text. */
-export function photoImg(A: AssetTokens, size: number, s: Pick<SignatureState, 'fullName'> & PhotoScale): string {
+export function photoImg(
+  A: AssetTokens,
+  size: number,
+  s: Pick<SignatureState, 'fullName' | 'featuredImage' | 'logo' | 'company'> & PhotoScale,
+): string {
   const px = psz(s, size);
-  return img(A.photo, px, px, s.fullName ? `Photo of ${s.fullName}` : 'Profile photo');
+  const alt =
+    s.featuredImage === 'logo' && s.logo.src ? logoAlt(s) : s.fullName ? `Photo of ${s.fullName}` : 'Profile photo';
+  return img(A.photo, px, px, alt);
 }
 
 /** True when images may move: animation is on and the build is not static. */

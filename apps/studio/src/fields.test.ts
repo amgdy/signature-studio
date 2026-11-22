@@ -110,8 +110,8 @@ describe('accessibility read-out', () => {
 
 describe('image files', () => {
   test('fitWithin scales down to the longest side and never up', () => {
-    expect(fitWithin(512, 256, LOGO_MAX)).toEqual({ w: 128, h: 64 });
-    expect(fitWithin(300, 900, LOGO_MAX)).toEqual({ w: 43, h: 128 });
+    expect(fitWithin(1024, 512, LOGO_MAX)).toEqual({ w: 512, h: 256 });
+    expect(fitWithin(300, 900, LOGO_MAX)).toEqual({ w: 171, h: 512 });
     expect(fitWithin(64, 32, LOGO_MAX)).toEqual({ w: 64, h: 32 });
     expect(fitWithin(1800, 1200, PHOTO_MAX)).toEqual({ w: 900, h: 600 });
     expect(fitWithin(0, 0, LOGO_MAX)).toEqual({ w: 1, h: 1 });

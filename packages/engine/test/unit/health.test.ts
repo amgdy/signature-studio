@@ -28,8 +28,57 @@ describe('signature health', () => {
     expect(report.summary).toBe('All automated checks pass');
     for (const version of report.versions) expect(version.items.find((i) => i.id === 'native')?.status).toBe('manual');
     expect(stage.shadowRoot?.childElementCount).toBe(0);
-    expect(CLIENT_PROFILES).toHaveLength(4);
+    expect(CLIENT_PROFILES).toHaveLength(6);
     expect(COMPATIBILITY_REVIEWED).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  test('checks selected profiles against each version’s actual features', async () => {
+    const report = await checkSignatureHealth(
+      await pair({ emailProfiles: ['apple-mail', 'outlook-classic'], photoAnim: 'spin', replyStyle: 'line' }),
+      stage,
+    );
+    for (const { compatibility } of report.versions) {
+      expect(compatibility.map((r) => r.profile)).toEqual(['outlook-classic', 'apple-mail']);
+      expect(compatibility[1]).toMatchObject({ status: 'warning', text: expect.stringContaining('use Plain text') });
+    }
+    expect(report.versions[0].compatibility[0].text).toContain('animated PNG');
+    expect(report.versions[1].compatibility[0].text).not.toContain('animated PNG');
+  });
+
+  test('keeps four static credential badges, with safe links and names in plain text', async () => {
+    const canvas = document.createElement('canvas');
+    const src = canvas.toDataURL();
+    const builds = await pair({
+      badges: Array.from({ length: 5 }, (_, i) => ({
+        src,
+        name: `Contoso credential ${i + 1}`,
+        url: i === 0 ? 'example.com/verify' : 'javascript:alert(1)',
+        visible: true,
+      })),
+    });
+
+    const [message, reply] = builds;
+    expect(message.state.badges).toHaveLength(4);
+    expect(Object.values(message.images).filter((image) => image.name.startsWith('badge_'))).toHaveLength(4);
+    expect(message.text).toContain('Contoso credential 1: https://example.com/verify');
+    expect(message.html()).not.toContain('javascript:');
+    expect(reply.text).not.toContain('Contoso credential');
+    expect(reply.html()).not.toContain('Contoso credential');
+    const report = await checkSignatureHealth(builds, stage);
+    expect(report.versions[0].features.find((f) => f.id === 'badges')).toMatchObject({ status: 'warning' });
+    expect(report.versions[0].items.find((f) => f.id === 'phone')).toMatchObject({ status: 'pass' });
+  });
+
+  test('hidden badges are omitted from rendered assets, text and feature coverage', async () => {
+    const hiddenSrc = document.createElement('canvas').toDataURL();
+    const [message] = await pair({
+      badges: [{ src: hiddenSrc, name: 'Private credential', url: '', visible: false }],
+    });
+    expect(Object.keys(message.images).some((name) => name.startsWith('badge_'))).toBe(false);
+    expect(message.text).not.toContain('Private credential');
+    expect(message.html()).not.toContain('Private credential');
+    const report = await checkSignatureHealth([message, await build(message.state, { version: 'reply' })], stage);
+    expect(report.versions[0].features.find((feature) => feature.id === 'badges')).toBeUndefined();
   });
 
   test('requires matching new and reply builds', async () => {

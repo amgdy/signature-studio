@@ -4,6 +4,7 @@
  */
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import type { StateStorage } from 'zustand/middleware';
 import { isRecord, setOptimize, toState } from './engine.ts';
 import type {
   ExtraKind,
@@ -23,16 +24,119 @@ const STATE_KEY = 'signature-studio.state.v5';
 export const UI_KEY = 'signature-studio.ui.v5';
 const STYLES_KEY = 'signature-studio.styles.v5';
 
-/** localStorage, or null when the browser blocks it (some private modes do). */
-function safeStorage(): Storage | null {
+export type BrowserStorageMode = 'local' | 'session' | 'memory';
+interface BrowserStorageStatus {
+  mode: BrowserStorageMode;
+}
+
+let storageStatus: BrowserStorageStatus = { mode: 'local' };
+const storageListeners = new Set<() => void>();
+const memoryStorage = new Map<string, string>();
+const storageModes = new Map<string, BrowserStorageMode>();
+const workStorageKeys = new Set([STATE_KEY, STYLES_KEY]);
+
+function publishStorageMode(name: string, mode: BrowserStorageMode): void {
+  storageModes.set(name, mode);
+  const modes = new Set([...workStorageKeys].map((key) => storageModes.get(key)));
+  const next = modes.has('memory') ? 'memory' : modes.has('session') ? 'session' : 'local';
+  if (storageStatus.mode === next) return;
+  storageStatus = { mode: next };
+  storageListeners.forEach((listener) => listener());
+}
+
+export function getBrowserStorageStatus(): BrowserStorageStatus {
+  return storageStatus;
+}
+
+export function subscribeBrowserStorageStatus(listener: () => void): () => void {
+  storageListeners.add(listener);
+  return () => storageListeners.delete(listener);
+}
+
+function browserStorage(which: 'localStorage' | 'sessionStorage'): Storage | null {
   try {
-    return typeof localStorage === 'undefined' ? null : localStorage;
+    return typeof globalThis[which] === 'undefined' ? null : globalThis[which];
   } catch {
     return null;
   }
 }
 
-const storage = createJSONStorage(() => safeStorage() ?? sessionStorage);
+const fallbackStorage: StateStorage = {
+  getItem: (name) => {
+    try {
+      const local = browserStorage('localStorage')?.getItem(name);
+      if (local !== null && local !== undefined) {
+        publishStorageMode(name, 'local');
+        return local;
+      }
+    } catch {
+      // Try the less persistent store, then the in-memory fallback.
+    }
+    try {
+      const session = browserStorage('sessionStorage')?.getItem(name);
+      if (session !== null && session !== undefined) {
+        publishStorageMode(name, 'session');
+        return session;
+      }
+    } catch {
+      // The visible storage status reports that the in-memory fallback is in use.
+    }
+    const memory = memoryStorage.get(name);
+    if (memory !== undefined) {
+      publishStorageMode(name, 'memory');
+      return memory;
+    }
+    return null;
+  },
+  setItem: (name, value) => {
+    try {
+      const local = browserStorage('localStorage');
+      if (!local) throw new Error('localStorage is unavailable');
+      local.setItem(name, value);
+      publishStorageMode(name, 'local');
+      return;
+    } catch {
+      // Try session storage before using memory; the UI warns when data will not survive this tab.
+    }
+    try {
+      const session = browserStorage('sessionStorage');
+      if (!session) throw new Error('sessionStorage is unavailable');
+      session.setItem(name, value);
+      try {
+        browserStorage('localStorage')?.removeItem(name);
+      } catch {
+        // The session copy remains available and the visible status explains its lifetime.
+      }
+      publishStorageMode(name, 'session');
+      return;
+    } catch {
+      // Surface the in-memory lifetime through the same status shown beside the backup action.
+    }
+    memoryStorage.set(name, value);
+    publishStorageMode(name, 'memory');
+  },
+  removeItem: (name) => {
+    for (const which of ['localStorage', 'sessionStorage'] as const) {
+      try {
+        browserStorage(which)?.removeItem(name);
+      } catch {
+        // Continue clearing the remaining available stores.
+      }
+    }
+    memoryStorage.delete(name);
+    storageModes.delete(name);
+    if (workStorageKeys.has(name)) {
+      const modes = new Set([...workStorageKeys].map((key) => storageModes.get(key)));
+      const next = modes.has('memory') ? 'memory' : modes.has('session') ? 'session' : 'local';
+      if (storageStatus.mode !== next) {
+        storageStatus = { mode: next };
+        storageListeners.forEach((listener) => listener());
+      }
+    }
+  },
+};
+
+const storage = createJSONStorage(() => fallbackStorage);
 
 /* ---------- Signature ---------- */
 
@@ -110,7 +214,7 @@ export const useSignatureStore = create<SignatureData & SignatureActions>()(
 );
 
 /* A first visit keeps its random sample person, so a reload shows the same one. */
-if (safeStorage()?.getItem(STATE_KEY) === null) useSignatureStore.setState({});
+if (fallbackStorage.getItem(STATE_KEY) === null) useSignatureStore.setState({});
 
 /* The engine reads the optimise setting from a module-level switch, so keep it in step with the store. */
 setOptimize(useSignatureStore.getState().optimize);
@@ -160,7 +264,7 @@ export const useStylesStore = create<StylesStore>()(
 export const PANES = [
   { id: 'design', label: 'Design', title: 'Pick a design or a saved style' },
   { id: 'layout', label: 'Layout & colour', title: 'Columns, placement, colours and background' },
-  { id: 'photo', label: 'Photo & logo', title: 'Your images, their size and appearance' },
+  { id: 'photo', label: 'Images', title: 'Your photo, company logo and awards' },
   { id: 'name', label: 'Typography', title: 'Fonts, readable sizes and handwritten names' },
   { id: 'icons', label: 'Icons', title: 'Drawing family, style, weight and colour' },
   { id: 'details', label: 'Profile', title: 'Who you are' },
@@ -177,8 +281,8 @@ export const PANES = [
 export type PaneId = (typeof PANES)[number]['id'];
 
 export const FLOW = [
-  { id: 'details', label: 'Details', panes: ['details', 'contact', 'photo', 'extras'] },
   { id: 'design', label: 'Design', panes: ['design'] },
+  { id: 'details', label: 'Details', panes: ['details', 'contact', 'photo', 'extras'] },
   { id: 'style', label: 'Style', panes: ['layout', 'name', 'icons', 'reply'] },
   { id: 'check', label: 'Check', panes: ['check'] },
   { id: 'use', label: 'Use', panes: ['files'] },
@@ -239,6 +343,8 @@ interface UiData {
   includePhoto: boolean;
   /** What the last file save or open did, shown in the Files section. Not kept between visits. */
   fileNote: string;
+  /** Manual native-app verification, keyed by client profile and test id. */
+  clientChecks: Record<string, boolean>;
   startOver: StartOver | null;
   /** On a narrow screen, the settings or the preview. Not kept between visits. */
   narrowView: NarrowView;
@@ -261,13 +367,14 @@ interface UiActions {
   setCompareShowAll: (on: boolean) => void;
   setIncludePhoto: (on: boolean) => void;
   setFileNote: (note: string) => void;
+  toggleClientCheck: (id: string) => void;
   setStartOver: (which: StartOver | null) => void;
   setNarrowView: (view: NarrowView) => void;
 }
 
 /** The Studio view on a first visit, and after Reset everything. */
 const UI_DEFAULTS: UiData = {
-  pane: 'details',
+  pane: 'design',
   appTheme: 'auto',
   version: 'new',
   mode: 'single',
@@ -279,6 +386,7 @@ const UI_DEFAULTS: UiData = {
   compareShowAll: false,
   includePhoto: true,
   fileNote: '',
+  clientChecks: {},
   startOver: null,
   narrowView: 'edit',
 };
@@ -314,6 +422,7 @@ export const useUiStore = create<UiData & UiActions>()(
       setCompareShowAll: (compareShowAll) => set({ compareShowAll }),
       setIncludePhoto: (includePhoto) => set({ includePhoto }),
       setFileNote: (fileNote) => set({ fileNote }),
+      toggleClientCheck: (id) => set((u) => ({ clientChecks: { ...u.clientChecks, [id]: !u.clientChecks[id] } })),
       setStartOver: (startOver) => set({ startOver }),
       setNarrowView: (narrowView) => set({ narrowView }),
     }),
@@ -328,10 +437,15 @@ export const useUiStore = create<UiData & UiActions>()(
         filter: u.filter,
         compareTheme: u.compareTheme,
         picks: u.picks,
+        clientChecks: u.clientChecks,
       }),
       merge: (persisted, current) => {
         if (!isRecord(persisted)) return current;
-        const { pane, appTheme, dark, device, filter, compareTheme, picks } = persisted;
+        const { pane, appTheme, dark, device, filter, compareTheme, picks, clientChecks } = persisted;
+        const checks: Record<string, boolean> = {};
+        if (isRecord(clientChecks))
+          for (const [id, checked] of Object.entries(clientChecks).slice(0, 100))
+            if (typeof checked === 'boolean' && id.length < 100) checks[id] = checked;
         return {
           ...current,
           pane: isPane(pane) ? pane : current.pane,
@@ -342,6 +456,7 @@ export const useUiStore = create<UiData & UiActions>()(
           filter: isGalleryFilter(filter) ? filter : current.filter,
           compareTheme: compareTheme === 'mine' ? 'mine' : 'suggested',
           picks: sanitizePicks(picks),
+          clientChecks: checks,
         };
       },
     },

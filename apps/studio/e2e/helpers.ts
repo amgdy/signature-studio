@@ -143,7 +143,7 @@ export interface StoredState {
   replyStyle: string;
   iconStyle: string;
   iconFamily: string;
-  emailProfile: string;
+  emailProfiles: string[];
   iconWeight: string;
   iconColor: string;
   show: Record<string, boolean>;

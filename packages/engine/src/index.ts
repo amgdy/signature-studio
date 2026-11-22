@@ -17,12 +17,14 @@ export {
   themeSettings,
 } from './color.ts';
 export { logoColors } from './raster/render.ts';
+export { badgeVerificationUrl } from './content.ts';
 export { THEMES } from './data.ts';
 export { TEMPLATES } from './designs/index.ts';
 export { copyRich, copyText, download, downloadHtml, imagesPackage, outlookPackage } from './export.ts';
 export { HW_PENS } from './name.ts';
 export {
   ANIM_OPTIONS,
+  MAX_BADGES,
   DESIGN_CATEGORY_OPTIONS,
   EMAIL_PROFILE_OPTIONS,
   EXTRA_OPTIONS,

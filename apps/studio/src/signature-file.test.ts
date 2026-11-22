@@ -7,6 +7,8 @@ import { CULTURES, blankState, emptyDetails, randomSample, sampleState } from '.
 import {
   NEWER_SIGNATURE_FILE,
   NOT_A_SIGNATURE_FILE,
+  brandTemplateYaml,
+  readBrandTemplate,
   readSignatureFile,
   saveSignature,
   signatureFileName,
@@ -32,23 +34,88 @@ function cur(state: SignatureState, optimize = true, activeStyleId: string | nul
 }
 
 describe('signature file', () => {
-  test('saves the email profile separately from style and accepts older files without it', () => {
-    const state = toState({ ...base, iconFamily: 'handdrawn' });
+  test('round-trips selected email profiles and featured image, and migrates the old Outlook profile', () => {
+    const state = toState({
+      ...base,
+      emailProfiles: ['apple-mail', 'outlook-classic'],
+      iconFamily: 'handdrawn',
+      featuredImage: 'logo',
+    });
+
     const text = signatureYaml(cur(state), false, now);
     const saved = parse(text);
-    expect(saved).toMatchObject({ emailProfile: 'outlook', style: { iconFamily: 'handdrawn' } });
-    expect(saved.style).not.toHaveProperty('emailProfile');
-    expect(saved.details).not.toHaveProperty('emailProfile');
+    expect(saved).toMatchObject({
+      emailProfiles: ['outlook-classic', 'apple-mail'],
+      style: { iconFamily: 'handdrawn', featuredImage: 'logo' },
+    });
+    expect(saved.style).not.toHaveProperty('emailProfiles');
+    expect(saved.details).not.toHaveProperty('emailProfiles');
     const opened = readSignatureFile(text, base);
     if (!opened.ok) throw new Error(opened.message);
-    expect(opened.state).toMatchObject({ emailProfile: 'outlook', iconFamily: 'handdrawn' });
-    const older = readSignatureFile('signature: 2\n', base);
+    expect(opened.state).toMatchObject({
+      emailProfiles: ['outlook-classic', 'apple-mail'],
+      iconFamily: 'handdrawn',
+      featuredImage: 'logo',
+    });
+    const older = readSignatureFile('signature: 2\nemailProfile: outlook\n', base);
     if (!older.ok) throw new Error(older.message);
-    expect(older.state.emailProfile).toBe('outlook');
+    expect(older.state.emailProfiles).toEqual(['outlook', 'outlook-classic']);
     expect(readSignatureFile('signature: 2\nemailProfile: unknown\n', base)).toMatchObject({
       ok: false,
       message: 'This email profile is not supported by this version of Signature Studio.',
     });
+  });
+
+  test('round-trips credential images, names and links without the personal photo', () => {
+    const badge = {
+      name: 'Contoso certification',
+      url: 'https://example.com/verify',
+      src: 'data:image/png;base64,iVBORw0KGgo=',
+      visible: true,
+    };
+    const text = signatureYaml(cur(toState({ ...base, badges: [badge] })), false, now);
+    expect(text).toContain('badges:');
+    const opened = readSignatureFile(text, base);
+    if (!opened.ok) throw new Error(opened.message);
+    expect(opened.state.badges).toEqual([badge]);
+  });
+
+  test('company templates carry brand and layout only, preserving the current personal images and awards', () => {
+    const branded = toState({
+      ...base,
+      company: 'Contoso',
+      logo: { src: LOGO },
+      badges: [{ name: 'Award', url: '', src: LOGO, visible: false }],
+      colors: ['#123456'],
+    });
+    const text = brandTemplateYaml(branded);
+    expect(text).not.toContain('Sam: Lee?');
+    expect(text).not.toContain(PHOTO);
+    expect(text).not.toContain('Award');
+    expect(text).toContain('company: Contoso');
+
+    const personal = toState({
+      ...base,
+      fullName: 'Alex Example',
+      photo: { src: PHOTO },
+      badges: [{ name: 'Personal award', url: '', src: LOGO, visible: true }],
+    });
+    const opened = readBrandTemplate(text, personal);
+    if (!opened.ok) throw new Error(opened.message);
+    expect(opened.state).toMatchObject({
+      fullName: 'Alex Example',
+      company: 'Contoso',
+      photo: { src: PHOTO },
+      badges: [{ name: 'Personal award', visible: true }],
+      logo: { src: LOGO },
+      colors: ['#123456'],
+    });
+    const withoutLogo = readBrandTemplate(brandTemplateYaml(toState({ ...branded, logo: { src: '' } })), personal);
+    if (!withoutLogo.ok) throw new Error(withoutLogo.message);
+    expect(withoutLogo.state.logo.src).toBe('');
+    expect(withoutLogo.state.photo.src).toBe(PHOTO);
+    expect(withoutLogo.state.badges[0]?.name).toBe('Personal award');
+    expect(readBrandTemplate('signature: 2', personal).ok).toBe(false);
   });
 
   test('version 1 palette ids and custom colours migrate, then save only colour settings', () => {

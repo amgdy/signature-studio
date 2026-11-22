@@ -46,7 +46,7 @@ describe('styles', () => {
     if (!style) throw new Error('Missing imported style');
     expect(applyStyle(base, style.s)).toEqual(state);
     expect(style.s).not.toHaveProperty('theme');
-    expect(style.s).not.toHaveProperty('emailProfile');
+    expect(style.s).not.toHaveProperty('emailProfiles');
   });
 
   test('styleOf carries the look and three switches, never details', () => {

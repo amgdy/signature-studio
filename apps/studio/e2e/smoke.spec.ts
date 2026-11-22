@@ -1,28 +1,63 @@
 import { expect, test } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
 import pkg from '../package.json' with { type: 'json' };
-import { fixture, goTo, open, option, pickDesign, settled, signature, signatureHtml, watch } from './helpers.ts';
+import {
+  fixture,
+  goTo,
+  open,
+  option,
+  pickDesign,
+  settled,
+  signature,
+  signatureHtml,
+  storedState,
+  watch,
+} from './helpers.ts';
 
-test('starts with Details and exposes five ordered sections with a separate Outlook profile', async ({ page }) => {
+test('starts with Design, then offers Details and the other steps without locking them', async ({ page }) => {
   await page.goto('/');
   await settled(page);
-  await expect(page.getByTestId('pane-details')).toBeVisible();
+  await expect(page.getByTestId('pane-design')).toBeVisible();
   const steps = page.getByTestId('section-rail').getByRole('tab');
-  await expect(steps).toHaveText(['Details', 'Design', 'Style', 'Check', 'Use']);
-  await expect(page.getByRole('combobox', { name: 'Email profile', exact: true })).toHaveValue('outlook');
+  await expect(steps).toHaveText(['Design', 'Details', 'Style', 'Check', 'Use']);
+  await expect(page.getByRole('button', { name: 'Email profiles (2)' })).toBeVisible();
   await expect(page.locator('meta[name="description"]')).not.toHaveAttribute('content', /Outlook/);
-  await page.getByTestId('step-details').focus();
+  await page.getByRole('button', { name: 'Continue to Details' }).click();
+  await expect(page.getByTestId('pane-details')).toBeVisible();
+  await page.getByTestId('step-design').focus();
   await page.keyboard.press('ArrowDown');
-  await expect(page.getByTestId('step-design')).toBeFocused();
-  await expect(page.getByTestId('gallery')).toBeVisible();
+  await expect(page.getByTestId('step-details')).toBeFocused();
   await page.keyboard.press('End');
   await expect(page.getByTestId('pane-files')).toBeVisible();
   await expect(page.getByTestId('save-html')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Download reply HTML' })).toBeEnabled();
   await expect(page.getByText('Add it to Outlook', { exact: true })).toBeVisible();
   await page.keyboard.press('Home');
-  await expect(page.getByTestId('pane-details')).toBeVisible();
+  await expect(page.getByTestId('pane-design')).toBeVisible();
 });
 
 for (const width of [1440, 343]) {
+  test(`reset is visible in the header and keyboard accessible at ${width}px`, async ({ page }) => {
+    await open(page);
+    await goTo(page, 'details');
+    await page.locator('[data-field="title"]').fill('Head of Testing');
+    await page.setViewportSize({ width, height: 900 });
+    const reset = page.getByRole('button', { name: 'Reset everything', exact: true });
+    await expect(reset).toBeInViewport({ ratio: 1 });
+    await expect(reset).toContainText('Reset');
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
+    const resetBox = await reset.boundingBox();
+    if (!resetBox) throw new Error('The reset button must be visible.');
+    expect(resetBox.x + resetBox.width).toBeGreaterThan(width - 25);
+    await reset.focus();
+    await page.keyboard.press('Enter');
+    const dialog = page.getByTestId('start-over-dialog');
+    await expect(dialog).toContainText('Reset everything?');
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(await storedState(page)).toMatchObject({ fullName: 'Sam Taylor', title: 'Head of Testing' });
+  });
+
   test(`the build footer shows its version, date and run without crowding the page at ${width}px`, async ({
     page,
     context,
@@ -291,8 +326,8 @@ test('the logo goes back to the start and keeps your work, with Start over besid
 
   const home = page.getByRole('button', { name: 'Signature Studio, back to the start' });
   await home.click();
-  await expect(page.getByTestId('pane-details')).toBeVisible();
-  await expect(page.getByTestId('step-details')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByTestId('pane-design')).toBeVisible();
+  await expect(page.getByTestId('step-design')).toHaveAttribute('aria-selected', 'true');
   await expect(option(page, 'seg-version', 'new')).toHaveAttribute('aria-pressed', 'true');
   await expect(option(page, 'seg-mode', 'single')).toHaveAttribute('aria-pressed', 'true');
   await expect(signature(page)).toContainText('Head of Testing');
@@ -305,8 +340,48 @@ test('the logo goes back to the start and keeps your work, with Start over besid
   await expect.poll(() => settings.evaluate((el) => el.scrollTop)).toBe(0);
 
   const startOver = await page.getByTestId('start-over').boundingBox();
-  const profile = await page.getByRole('combobox', { name: 'Email profile', exact: true }).boundingBox();
+  const profile = await page.getByRole('button', { name: /Email profiles/ }).boundingBox();
   expect(startOver?.x).toBeLessThan(profile?.x ?? 0);
+});
+
+test('shares the offline logo with the favicon and resizes the desktop settings with keys and dragging', async ({
+  page,
+}) => {
+  await open(page);
+  const logo = await page.getByTestId('home').locator('img').getAttribute('src');
+  expect(logo).toMatch(/^data:image\/svg\+xml/);
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', logo ?? '');
+  const separator = page.getByRole('separator', { name: 'Resize settings panel' });
+  await goTo(page, 'details');
+  const settings = page.getByRole('tabpanel', { name: 'Details' });
+  const initial = await settings.boundingBox();
+  await separator.press('ArrowRight');
+  expect((await settings.boundingBox())?.width).toBeGreaterThan(initial?.width ?? 0);
+  const grab = await separator.boundingBox();
+  if (!grab) throw new Error('Missing resize handle');
+  const x = grab.x + grab.width / 2;
+  const y = grab.y + grab.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 80, y);
+  await page.mouse.up();
+  await expect.poll(async () => (await settings.boundingBox())?.width ?? 0).toBeGreaterThan((initial?.width ?? 0) + 80);
+  await page.setViewportSize({ width: 343, height: 900 });
+  await expect(separator).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Download new-message HTML' })).toBeVisible();
+});
+
+test('downloads the displayed signature as standalone HTML next to Copy', async ({ page }) => {
+  await open(page);
+  for (const version of ['new', 'reply'] as const) {
+    await option(page, 'seg-version', version).click();
+    await settled(page);
+    const [file] = await Promise.all([page.waitForEvent('download'), page.getByTestId('save-html').click()]);
+    expect(file.suggestedFilename()).toMatch(version === 'reply' ? /reply.*\.html$/i : /(?<!reply)\.html$/i);
+    const html = await readFile(await file.path(), 'utf8');
+    expect(html.toLowerCase()).toContain('<!doctype html>');
+    expect(html).toContain('Sam Taylor');
+  }
 });
 
 test('typing a detail changes the signature', async ({ page }) => {
@@ -338,6 +413,107 @@ test('copy signature puts rich text on the clipboard and says so', async ({ page
   expect(types).toContain('text/html');
 });
 
+test('a company logo can replace the featured photo without duplicating the smaller logo', async ({ page }) => {
+  await open(page);
+  await pickDesign(page, 'aurora');
+  await goTo(page, 'photo');
+  await expect(page.getByRole('button', { name: 'Use logo as main image' })).toHaveCount(0);
+  await expect(signature(page).getByRole('img', { name: 'Photo of Sam Taylor' })).toBeVisible();
+  await page.getByTestId('logo-file').setInputFiles(fixture('logo.png'));
+  await page.getByRole('button', { name: 'Use logo as main image' }).click();
+  await settled(page);
+  await expect(signature(page).getByRole('img', { name: 'Contoso logo' })).toHaveCount(1);
+  await expect(signature(page).getByRole('img', { name: 'Photo of Sam Taylor' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Use personal photo instead' }).click();
+  await expect(signature(page).getByRole('img', { name: 'Photo of Sam Taylor' })).toBeVisible();
+});
+
+test('Monogram does not offer a logo as its main image but can switch back from a saved logo preference', async ({
+  page,
+}) => {
+  await open(page);
+  await pickDesign(page, 'monogram');
+  await goTo(page, 'photo');
+  await page.getByTestId('logo-file').setInputFiles(fixture('logo.png'));
+  await expect(page.getByRole('button', { name: 'Use logo as main image' })).toHaveCount(0);
+
+  await page.getByTestId('step-design').click();
+  await pickDesign(page, 'aurora');
+  await goTo(page, 'photo');
+  await page.getByRole('button', { name: 'Use logo as main image' }).click();
+  await page.getByTestId('step-design').click();
+  await pickDesign(page, 'monogram');
+  await goTo(page, 'photo');
+  await expect(page.getByRole('button', { name: 'Use logo as main image' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Use personal photo instead' })).toBeVisible();
+  await page.getByRole('button', { name: 'Use personal photo instead' }).click();
+  await expect(page.getByRole('button', { name: 'Use personal photo instead' })).toHaveCount(0);
+});
+
+test('credential badges stay in one row on phones and are omitted in replies', async ({ page }) => {
+  await open(page);
+  await goTo(page, 'photo');
+  for (const number of [1, 2, 3, 4]) {
+    await page.getByTestId('badge-file').setInputFiles(fixture('logo.png'));
+    await page.getByRole('textbox', { name: `Badge ${number} name` }).fill(`Contoso credential ${number}`);
+  }
+  await page.getByRole('switch', { name: 'Show badge 2' }).click();
+  await page.getByTestId('badge-3').getByRole('button', { name: 'Move up' }).click();
+  await expect(signature(page).getByRole('img', { name: 'Contoso credential 2' })).toHaveCount(0);
+  await expect(signature(page).getByRole('img', { name: 'Contoso credential 3' })).toBeVisible();
+  const visibleOrder = await signature(page)
+    .locator('img[alt^="Contoso credential"]')
+    .evaluateAll((images) => images.map((image) => image.getAttribute('alt')));
+  expect(visibleOrder).toEqual(['Contoso credential 1', 'Contoso credential 3', 'Contoso credential 4']);
+  await page.reload();
+  await settled(page);
+  await goTo(page, 'photo');
+  await expect(page.getByRole('switch', { name: 'Show badge 3' })).not.toBeChecked();
+  await expect(page.getByTestId('badge-2').getByRole('textbox', { name: 'Badge 2 name' })).toHaveValue(
+    'Contoso credential 3',
+  );
+  await expect(page.getByRole('button', { name: 'Add award or certificate' })).toHaveCount(0);
+  await page.getByRole('textbox', { name: 'Badge 1 verification link' }).fill('example.com/verify');
+  await option(page, 'seg-device', 'phone').click();
+  const first = signature(page).getByRole('img', { name: 'Contoso credential 1' });
+  const last = signature(page).getByRole('img', { name: 'Contoso credential 4' });
+  await expect(signature(page).getByRole('link', { name: 'Contoso credential 1' })).toHaveAttribute(
+    'href',
+    'https://example.com/verify',
+  );
+  const a = await first.boundingBox();
+  const b = await last.boundingBox();
+  expect(a?.y).toBe(b?.y);
+  expect((b?.x ?? 0) + (b?.width ?? 0) - (a?.x ?? 0)).toBe(208);
+  await option(page, 'seg-version', 'reply').click();
+  await expect(first).toHaveCount(0);
+  await page.getByRole('button', { name: 'Remove badge 1' }).click();
+  await expect(page.getByRole('textbox', { name: 'Badge 1 name' })).toHaveValue('Contoso credential 3');
+});
+
+test('native client checklist is clearly manual and keeps progress after reload', async ({ page }) => {
+  await open(page);
+  await goTo(page, 'check');
+  const classic = page
+    .getByTestId('client-profile')
+    .locator('details')
+    .filter({ hasText: 'Classic Outlook for Windows' });
+  await classic.locator('summary').click();
+  await expect(classic).toContainText('These are your native-app checks. The browser cannot mark them complete.');
+  await classic.getByTestId('native-test-outlook-classic:install').check();
+  await expect(classic.locator('summary')).toContainText('1/4 manual checks');
+  await page.reload();
+  await settled(page);
+  await goTo(page, 'check');
+  const reloaded = page
+    .getByTestId('client-profile')
+    .locator('details')
+    .filter({ hasText: 'Classic Outlook for Windows' });
+  await reloaded.locator('summary').click();
+  await expect(reloaded.getByTestId('native-test-outlook-classic:install')).toBeChecked();
+  await expect(reloaded.locator('summary')).toContainText('1/4 manual checks');
+});
+
 test('a company logo uploads, scales down, shows in the signature and can be removed', async ({ page }) => {
   await open(page);
   await pickDesign(page, 'executive');
@@ -359,7 +535,7 @@ test('a company logo uploads, scales down, shows in the signature and can be rem
     h: img.naturalHeight,
     png: img.src.startsWith('data:image/png;base64,'),
   }));
-  expect(size).toEqual({ w: 128, h: 64, png: true });
+  expect(size).toEqual({ w: 256, h: 128, png: true });
   await expect(page.getByTestId('upload-logo')).toHaveText('Change logo');
   await expect.poll(() => signatureHtml(page)).toContain('alt="Company logo"');
 
@@ -427,13 +603,13 @@ test.describe('on a phone', () => {
     expect(w.problems).toEqual([]);
   });
 
-  test('the logo goes from the preview back to editing Details', async ({ page }) => {
+  test('the logo goes from the preview back to editing Design', async ({ page }) => {
     await page.goto('/');
     await goTo(page, 'contact');
     await option(page, 'seg-show', 'preview').click();
     await settled(page);
     await page.getByTestId('home').click();
-    await expect(page.getByTestId('pane-details')).toBeVisible();
+    await expect(page.getByTestId('pane-design')).toBeVisible();
     await expect(option(page, 'seg-show', 'edit')).toHaveAttribute('aria-pressed', 'true');
   });
 });

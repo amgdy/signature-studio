@@ -44,6 +44,7 @@ import type {
 } from '@signature-studio/engine';
 
 export {
+  badgeVerificationUrl,
   bgInfo,
   bgTint,
   build,
@@ -59,6 +60,7 @@ export {
   imagesPackage,
   isOptimized,
   MAX_COLORS,
+  MAX_BADGES,
   logoColors,
   outlookPackage,
   paletteFrom,
@@ -146,6 +148,7 @@ export const STYLE_KEY_LIST = [
   'cols',
   'photoPos',
   'photoSize',
+  'featuredImage',
   'replyStyle',
   'iconStyle',
   'iconFamily',

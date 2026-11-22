@@ -31,6 +31,67 @@ test('a first visit starts with a made-up person, and a reload keeps them', asyn
   expect((await storedState(page)).fullName).toBe(first.fullName);
 });
 
+test('company templates export only brand data and preserve personal details on import', async ({ page }) => {
+  await open(page);
+  await goTo(page, 'details');
+  await page.locator('[data-field="company"]').fill('Contoso');
+  await goTo(page, 'photo');
+  await page.getByTestId('photo-file').setInputFiles(fixture('logo.png'));
+  await page.getByTestId('logo-file').setInputFiles(fixture('logo.png'));
+  await page.getByTestId('badge-file').setInputFiles(fixture('logo.png'));
+  await page.getByRole('textbox', { name: 'Badge 1 name' }).fill('Personal award');
+  await goTo(page, 'files');
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByTestId('files-save-brand').click();
+  const download = await downloadPromise;
+  const path = await download.path();
+  if (!path) throw new Error('The company template download was not created.');
+  const text = await readFile(path, 'utf8');
+  expect(text).toContain('brandTemplate: 1');
+  expect(text).toContain('company: Contoso');
+  expect(text).not.toContain('Sam Taylor');
+  expect(text).not.toContain('Personal award');
+  expect(text).not.toContain('photo:');
+
+  await page.goto('/'); // Keep the existing browser state and alter the person before importing.
+  await settled(page);
+  await goTo(page, 'details');
+  await page.locator('[data-field="fullName"]').fill('Alex Example');
+  await goTo(page, 'files');
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByTestId('files-open-brand').click();
+  await (
+    await chooser
+  ).setFiles({ name: 'company-brand.yaml', mimeType: 'application/yaml', buffer: Buffer.from(text) });
+  await expect(page.locator('#file-note')).toContainText('Your personal details, photo and awards stay unchanged');
+  expect(await storedState(page)).toMatchObject({
+    fullName: 'Alex Example',
+    company: 'Contoso',
+    badges: [{ name: 'Personal award' }],
+  });
+  expect((await storedState(page)).photo.src).toBeTruthy();
+});
+
+test('browser storage fallback warns when work is only kept for this tab', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => {
+    const local = localStorage;
+    // oxlint-disable-next-line typescript/unbound-method -- Reflect.apply supplies the Storage receiver below.
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (this === local && key === 'signature-studio.state.v5')
+        throw new DOMException('Storage is full', 'QuotaExceededError');
+      Reflect.apply(original, this, [key, value]);
+    };
+  });
+  await goTo(page, 'details');
+  await page.locator('[data-field="title"]').fill('Principal Engineer');
+  await goTo(page, 'files');
+  await expect(page.getByText(/saved only for this tab/)).toBeVisible();
+  await expect(page.getByTestId('files-storage-backup')).toBeVisible();
+});
+
 test('save signature file writes readable YAML with base64 images, and it opens again', async ({ page }) => {
   await open(page);
   await goTo(page, 'photo');
@@ -141,7 +202,7 @@ test('a new blank signature clears details, photo and logo, and resets the setti
 
   await startOver(page, 'new-blank');
   await expect(page.getByTestId('toast').filter({ hasText: 'Blank signature ready.' })).toBeVisible();
-  await expect(page.getByTestId('pane-details')).toBeVisible();
+  await expect(page.getByTestId('pane-design')).toBeVisible();
   await expect(page.getByTestId('empty-hint')).toContainText('Add your name in Details to see your signature.');
   await settled(page);
   const html = await signatureHtml(page);
@@ -213,12 +274,12 @@ test('reset everything returns to a first visit and deletes saved styles after a
   await dialog.getByRole('button', { name: 'Cancel' }).click();
   expect(await storedStyles(page)).toHaveLength(2);
 
-  await page.getByTestId('start-over').click();
-  await page.getByTestId('reset-everything').click();
+  await page.getByRole('banner').getByRole('button', { name: 'Reset everything' }).click();
+  await expect(dialog).toContainText('This clears your details, uploaded images and manual checks');
   await page.getByTestId('confirm-start').click();
   await expect(dialog).toHaveCount(0);
   await expect(page.getByTestId('toast').filter({ hasText: 'Everything is reset.' })).toBeVisible();
-  await expect(page.getByTestId('pane-details')).toBeVisible();
+  await expect(page.getByTestId('pane-design')).toBeVisible();
   await expect(page.locator('html')).not.toHaveAttribute('data-app-theme', 'dark');
   await settled(page);
   await expect(signature(page)).not.toContainText('Sam Taylor');
@@ -227,7 +288,7 @@ test('reset everything returns to a first visit and deletes saved styles after a
   expect(s).toMatchObject({ template: 'aurora', cols: 'auto' });
   expect(s.fullName).toMatch(/^[A-Z][a-z]+ [A-Z][a-z]+$/);
   const ui = await page.evaluate(() => JSON.parse(localStorage.getItem('signature-studio.ui.v5') ?? '{}').state);
-  expect(ui).toMatchObject({ pane: 'details', appTheme: 'auto', filter: 'all', picks: [] });
+  expect(ui).toMatchObject({ pane: 'design', appTheme: 'auto', filter: 'all', picks: [] });
   expect(w.problems).toEqual([]);
 });
 

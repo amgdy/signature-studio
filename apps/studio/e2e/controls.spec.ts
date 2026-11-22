@@ -50,17 +50,17 @@ test('typography changes typed text and persists through reload', async ({ page 
   await expect(page.getByTestId('pane-name')).toContainText('Georgia fallback stack');
 });
 
-test('all ten handwriting previews load and the four new styles include offline licence terms', async ({ page }) => {
+test('all handwriting previews load and the added styles include offline licence terms', async ({ page }) => {
   await goTo(page, 'name');
   await option(page, 'seg-name-style', 'hand').click();
   const picker = page.getByTestId('hand-picker');
-  await expect(picker.getByRole('radio')).toHaveCount(10);
-  await expect.poll(() => loaded(picker.locator('img'))).toBe(10);
+  await expect(picker.getByRole('radio')).toHaveCount(14);
+  await expect.poll(() => loaded(picker.locator('img'))).toBe(14);
   for (const [label, id] of [
-    ['Calligraphic', 'bird'],
-    ['Looped', 'capitol'],
-    ['Loose print', 'casualhand'],
-    ['Neat print', 'readability'],
+    ['Italic script', 'felix'],
+    ['Formal signature', 'invite'],
+    ['Light cursive', 'league'],
+    ['Architect print', 'tech'],
   ]) {
     await picker.getByRole('radio', { name: label, exact: true }).check();
     await settled(page);
@@ -69,6 +69,7 @@ test('all ten handwriting previews load and the four new styles include offline 
   await page.getByText('Font licences and credits', { exact: true }).click();
   await expect(page.getByTestId('pane-name')).toContainText('SIL OPEN FONT LICENSE Version 1.1');
   await expect(page.getByTestId('pane-name')).toContainText('Kimberly Geswein');
+  await expect(page.getByTestId('pane-name')).toContainText('Tangerine');
 });
 
 test('the icon picker shows seventeen styles drawn on light and dark, and text labels write Mobile', async ({
@@ -294,8 +295,12 @@ test('signature health checks both versions and distinguishes automated checks f
   await option(page, 'check-version', 'reply').click();
   await expect(items).toHaveCount(19);
   await expect(page.getByTestId('pane-check')).toContainText('reply');
-  await page.getByRole('combobox', { name: 'Outlook client' }).selectOption('outlook-classic');
-  await expect(page.getByTestId('client-profile')).toContainText('No Word rendering engine');
+  await page
+    .getByTestId('client-profile')
+    .locator('summary')
+    .filter({ hasText: 'Classic Outlook for Windows' })
+    .click();
+  await expect(page.getByText('No Word rendering engine', { exact: false })).toBeVisible();
   await page.getByTestId('check-again').click();
   await expect(page.getByTestId('a11y-score')).toHaveText('All automated checks pass');
   await goTo(page, 'layout');
@@ -305,6 +310,42 @@ test('signature health checks both versions and distinguishes automated checks f
   await option(page, 'check-version', 'new').click();
   await expect(page.getByTestId('a11y-score')).toHaveText('All automated checks pass');
   await expect(page.getByTestId('pane-check')).toContainText('3 columns');
+});
+
+test('checks multiple selected apps, saves the selection and shows Apple Mail setup', async ({ page }) => {
+  await open(page);
+  await page.getByRole('button', { name: 'Email profiles (2)' }).click();
+  for (const name of ['Microsoft Outlook', 'Microsoft Outlook (Classic)', 'Apple Mail']) {
+    const icon = page.getByRole('menuitemcheckbox', { name, exact: true }).locator('img');
+    await expect(icon).toHaveAttribute('src', /^data:image\/svg\+xml/);
+    await expect.poll(() => icon.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+  }
+  await page.getByRole('menuitemcheckbox', { name: 'Apple Mail' }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'Microsoft Outlook', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await page.reload();
+  await goTo(page, 'check');
+  const advice = page.getByTestId('compatibility-advice');
+  await expect(advice).toContainText('Microsoft Outlook (Classic)');
+  await expect(advice).toContainText('On iPhone and iPad, use Plain text');
+  await expect(advice.locator('li')).toHaveCount(2);
+  await goTo(page, 'files');
+  await expect(page.getByText('Add it to Apple Mail', { exact: true })).toBeVisible();
+});
+
+test('compatibility advice can turn off animation in one step', async ({ page }) => {
+  await open(page);
+  await goTo(page, 'photo');
+  await option(page, 'seg-anim', 'spin').click();
+  await goTo(page, 'check');
+  const classic = page
+    .getByTestId('compatibility-advice')
+    .locator('li')
+    .filter({ hasText: 'Microsoft Outlook (Classic)' });
+  await expect(classic).toContainText('animated PNG');
+  await classic.getByRole('button', { name: 'Turn off animation' }).click();
+  await expect.poll(async () => (await storedState(page)).show.animate).toBe(false);
+  await expect(classic.getByRole('button', { name: 'Turn off animation' })).toHaveCount(0);
 });
 
 test('featured items can show in every design, with a third item', async ({ page }) => {

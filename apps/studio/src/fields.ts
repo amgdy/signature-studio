@@ -29,9 +29,9 @@ export type TextKey = {
 }[keyof SignatureState];
 
 /** The text the user types about themselves: every text key except the style settings. */
-export type DetailKey = Exclude<TextKey, StyleKey | 'motion' | 'emailProfile'>;
+export type DetailKey = Exclude<TextKey, StyleKey | 'motion'>;
 
-const NOT_DETAILS = new Set<string>([...STYLE_KEY_LIST, 'motion', 'cols', 'emailProfile']);
+const NOT_DETAILS = new Set<string>([...STYLE_KEY_LIST, 'motion', 'cols']);
 function isDetailKey(k: string): k is DetailKey {
   return !NOT_DETAILS.has(k) && typeof Reflect.get(DEFAULTS, k) === 'string';
 }
@@ -432,7 +432,7 @@ export function readoutParts({ html, animated, cols, state }: ReadoutInput): str
 /** The longest side of an uploaded photo. Larger photos only make the email heavier. */
 export const PHOTO_MAX = 900;
 /** A logo mark is drawn small, so it is kept within this square. */
-export const LOGO_MAX = 128;
+export const LOGO_MAX = 512;
 /** The image types a logo can be: the ones every Outlook shows. */
 export const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'] as const;
 

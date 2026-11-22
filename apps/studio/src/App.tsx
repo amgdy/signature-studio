@@ -21,14 +21,13 @@ import {
   RotateCcwIcon,
   SaveIcon,
   ShapesIcon,
-  SignatureIcon,
   SparklesIcon,
   SunIcon,
   TriangleAlertIcon,
   TypeIcon,
   UserRoundIcon,
 } from 'lucide-react';
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ComponentType, MouseEvent, ReactElement, RefObject } from 'react';
 import {
   AlertDialog,
@@ -43,7 +42,9 @@ import {
 import { Button, buttonVariants } from './components/ui/button.tsx';
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
@@ -51,8 +52,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './components/ui/dropdown-menu.tsx';
-import { Label } from './components/ui/label.tsx';
-import { NativeSelect, NativeSelectOption } from './components/ui/native-select.tsx';
+import brand from './brand.svg?inline';
+import appleMail from './assets/apple-mail.svg?inline';
+import outlook from './assets/outlook.svg?inline';
+import outlookClassic from './assets/outlook-classic.svg?inline';
 import { Tabs, TabsList, TabsTrigger } from './components/ui/tabs.tsx';
 import { Tooltip, TooltipContent, TooltipTrigger } from './components/ui/tooltip.tsx';
 import { SignatureContext, useFileActions, useMediaQuery, useSignatureBuild } from './hooks.tsx';
@@ -88,6 +91,7 @@ declare const STUDIO_BUILD_INFO: {
 
 /** One column below this width or height. A laptop zoomed to 150% or more lands here too. */
 const NARROW_QUERY = '(max-width: 1099px), (max-height: 599px)';
+const PROFILE_ICONS = { outlook, 'outlook-classic': outlookClassic, 'apple-mail': appleMail };
 const SECTIONS: Record<PaneId, ComponentType> = {
   design: DesignPane,
   layout: LayoutPane,
@@ -124,7 +128,7 @@ function startOverCopy(which: StartOver, savedStyles: number) {
   if (which === 'blank')
     return {
       title: 'Start a blank signature?',
-      body: `This clears your details, photo and logo, and puts every design setting back to its default. Your saved styles stay. ${KEEP_FILE}`,
+      body: `This clears your details and uploaded images, and puts every design setting back to its default. Your saved styles stay. ${KEEP_FILE}`,
       confirm: 'Start blank',
     };
   if (which === 'sample')
@@ -139,7 +143,7 @@ function startOverCopy(which: StartOver, savedStyles: number) {
       : ` It also deletes your ${savedStyles === 1 ? 'saved style' : `${savedStyles} saved styles`}; export them in Design first to keep them.`;
   return {
     title: 'Reset everything?',
-    body: `This puts the Studio back to how it was on your first visit: a sample person, default settings, no picks for Compare and the default view.${styles} ${KEEP_FILE}`,
+    body: `This clears your details, uploaded images and manual checks, and puts the Studio back to how it was on your first visit: a sample person, default settings, no picks for Compare and the default view.${styles} ${KEEP_FILE}`,
     confirm: 'Reset everything',
   };
 }
@@ -220,14 +224,30 @@ function ToolButton({
     </Tooltip>
   );
 }
+
+function ResetButton({ className }: { className: string }) {
+  const setStartOver = useUiStore((u) => u.setStartOver);
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className={className}
+      aria-label="Reset everything"
+      onClick={() => setStartOver('reset')}
+    >
+      <TriangleAlertIcon />
+      Reset<span className="max-[800px]:hidden"> everything</span>
+    </Button>
+  );
+}
+
 function AppHeader({ files, onHome }: { files: FileActions; onHome: () => void }) {
   const setStartOver = useUiStore((u) => u.setStartOver);
-  const profile = useSignatureStore((st) => st.state.emailProfile);
+  const profiles = useSignatureStore((st) => st.state.emailProfiles);
   const update = useSignatureStore((st) => st.update);
-  const profileId = useId();
   return (
     <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b bg-card px-5 py-2.5 max-[800px]:px-3 max-[800px]:py-2">
-      <div className="flex min-w-0 items-center gap-2 max-[800px]:gap-1">
+      <div className="flex min-w-0 items-center gap-2 max-[800px]:w-full max-[800px]:gap-1">
         <h1 className="-ml-1.5 min-w-0">
           <Tooltip>
             <TooltipTrigger
@@ -241,12 +261,7 @@ function AppHeader({ files, onHome }: { files: FileActions; onHome: () => void }
                 />
               }
             >
-              <span
-                className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground"
-                aria-hidden="true"
-              >
-                <SignatureIcon className="size-5" />
-              </span>
+              <img className="size-8 shrink-0" src={brand} alt="" />
               <span className="truncate font-heading text-lg font-semibold tracking-tight">Signature Studio</span>
             </TooltipTrigger>
             <TooltipContent>Back to the start</TooltipContent>
@@ -280,31 +295,33 @@ function AppHeader({ files, onHome }: { files: FileActions; onHome: () => void }
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <ResetButton className="ml-auto hidden max-[800px]:inline-flex" />
       </div>
       <div className="flex flex-wrap items-center gap-2 max-[800px]:w-full max-[800px]:gap-1">
-        <div className="flex items-center gap-1.5">
-          <Label htmlFor={profileId} className="text-xs font-normal text-muted-foreground">
-            Email profile
-          </Label>
-          <NativeSelect
-            id={profileId}
-            size="sm"
-            value={profile}
-            onChange={(e) => {
-              const next = EMAIL_PROFILE_OPTIONS.find((p) => p.id === e.currentTarget.value);
-              if (next)
-                update({
-                  emailProfile: next.id,
-                });
-            }}
-          >
-            {EMAIL_PROFILE_OPTIONS.map((p) => (
-              <NativeSelectOption key={p.id} value={p.id}>
-                {p.label}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger render={<Button size="sm" variant="outline" />}>
+            <MailIcon /> Email profiles ({profiles.length})
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Choose one or more email profiles</DropdownMenuLabel>
+              {EMAIL_PROFILE_OPTIONS.map((p) => (
+                <DropdownMenuCheckboxItem
+                  key={p.id}
+                  checked={profiles.includes(p.id)}
+                  disabled={profiles.length === 1 && profiles.includes(p.id)}
+                  closeOnClick={false}
+                  onCheckedChange={(on) =>
+                    update({ emailProfiles: on ? [...profiles, p.id] : profiles.filter((id) => id !== p.id) })
+                  }
+                >
+                  <img alt="" className="size-4 shrink-0 object-contain" src={PROFILE_ICONS[p.id]} />
+                  {p.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <AppearanceMenu />
         <ToolButton
           tip="Open a signature file you saved (.yaml)"
@@ -320,6 +337,7 @@ function AppHeader({ files, onHome }: { files: FileActions; onHome: () => void }
           onClick={files.save}
           testId="save-file"
         />
+        <ResetButton className="max-[800px]:hidden" />
       </div>
     </header>
   );
@@ -543,6 +561,8 @@ export function App() {
   const files = useFileActions();
   const main = useRef<HTMLElement>(null);
   const settings = useRef<HTMLDivElement>(null);
+  const [settingsShare, setSettingsShare] = useState(36);
+  const resizeSettings = (share: number) => setSettingsShare(Math.round(Math.max(34, Math.min(53, share))));
   useEffect(
     () =>
       useUiStore.subscribe((current, previous) => {
@@ -573,6 +593,7 @@ export function App() {
   };
   return (
     <SignatureContext.Provider value={build}>
+      <link rel="icon" type="image/svg+xml" href={brand} />
       <div
         className={cn('min-h-screen bg-background text-foreground', !narrow && 'flex h-dvh flex-col overflow-hidden')}
       >
@@ -586,11 +607,10 @@ export function App() {
         <AppHeader files={files} onHome={goHome} />
         <main
           ref={main}
+          style={narrow ? undefined : { gridTemplateColumns: `92px ${settingsShare}% 12px minmax(0, 1fr)` }}
           className={cn(
             'mx-auto grid w-full max-w-[1680px]',
-            narrow
-              ? 'grid-cols-[minmax(0,1fr)] gap-3 px-3 pb-4'
-              : 'min-h-0 grow grid-cols-[92px_minmax(380px,460px)_minmax(0,1fr)] grid-rows-[minmax(0,1fr)] gap-5 px-5',
+            narrow ? 'grid-cols-[minmax(0,1fr)] gap-3 px-3 pb-4' : 'min-h-0 grow grid-rows-[minmax(0,1fr)] gap-3 px-5',
           )}
         >
           <nav
@@ -620,6 +640,36 @@ export function App() {
               <Subsections />
               <View key={pane} />
             </div>
+          ) : null}
+          {!narrow ? (
+            <div
+              // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- this is an interactive pane splitter, not a thematic break
+              role="separator"
+              tabIndex={0}
+              aria-label="Resize settings panel"
+              aria-controls="workflow-panel"
+              aria-orientation="vertical"
+              aria-valuemin={34}
+              aria-valuemax={53}
+              aria-valuenow={settingsShare}
+              aria-valuetext={`${settingsShare}% of workspace`}
+              className="my-5 grid h-auto cursor-col-resize touch-none place-items-center rounded-full border-0 before:h-12 before:w-0.5 before:rounded-full before:bg-border hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring active:bg-accent"
+              onPointerDown={(e) => {
+                if (e.button === 0) e.currentTarget.setPointerCapture(e.pointerId);
+              }}
+              onPointerMove={(e) => {
+                if (!e.currentTarget.hasPointerCapture(e.pointerId) || !settings.current || !main.current) return;
+                const left = settings.current.getBoundingClientRect().left + 8;
+                resizeSettings(((e.clientX - left - 18) / (main.current.clientWidth - 40)) * 100);
+              }}
+              onKeyDown={(e) => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+                e.preventDefault();
+                resizeSettings(
+                  e.key === 'Home' ? 34 : e.key === 'End' ? 53 : settingsShare + (e.key === 'ArrowLeft' ? -2 : 2),
+                );
+              }}
+            />
           ) : null}
           {previewing ? (
             <div className={cn('flex min-h-0 min-w-0 flex-col', !narrow && 'py-5')}>

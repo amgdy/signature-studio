@@ -98,7 +98,7 @@ describe('designs', () => {
 
 describe('handwriting', () => {
   test('ten styles, each with every printable ASCII character', () => {
-    expect(HW.order).toHaveLength(10);
+    expect(HW.order).toHaveLength(14);
     for (const id of HW.order) {
       const glyphs = HW.fonts[id]?.g ?? {};
       for (let c = 32; c <= 126; c++) expect(glyphs[String.fromCharCode(c)], `${id} ${c}`).toBeDefined();
@@ -418,11 +418,12 @@ describe('icons', () => {
   });
 
   test('old signatures keep classic icons and the default email profile', () => {
-    expect(normalize({})).toMatchObject({ iconFamily: 'standard', emailProfile: 'outlook' });
+    expect(normalize({})).toMatchObject({ iconFamily: 'standard', emailProfiles: ['outlook', 'outlook-classic'] });
     expect(normalize({ iconFamily: 'unknown', emailProfile: 'unknown' })).toMatchObject({
       iconFamily: 'standard',
-      emailProfile: 'outlook',
+      emailProfiles: ['outlook', 'outlook-classic'],
     });
+    expect(normalize({ emailProfiles: ['apple-mail', 'apple-mail', 'bad'] }).emailProfiles).toEqual(['apple-mail']);
     expect(normalize({ iconFamily: 'handdrawn' }).iconFamily).toBe('handdrawn');
   });
 
