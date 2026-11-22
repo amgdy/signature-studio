@@ -2,6 +2,7 @@
 import { cn } from 'cn';
 import {
   DownloadIcon,
+  ArrowRightIcon,
   LayoutGridIcon,
   PencilIcon,
   RefreshCwIcon,
@@ -402,9 +403,16 @@ export function DesignPane() {
   const actions = useStyleActions();
   const filter = useUiStore((u) => u.filter);
   const count = useStylesStore((st) => filterEntries(galleryEntries(st.saved), filter).length);
+  const setPane = useUiStore((u) => u.setPane);
   return (
     <Pane id="design">
       <Section title="Choose a template or style" hint={countText(count, filter)}>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <Note>Pick a design, then add your details. You can change the design any time.</Note>
+          <Button onClick={() => setPane('details')}>
+            Continue to Details <ArrowRightIcon />
+          </Button>
+        </div>
         <StyleBar actions={actions} />
         <Gallery actions={actions} />
       </Section>

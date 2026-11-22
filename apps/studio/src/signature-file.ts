@@ -1,6 +1,6 @@
 /*
  * The signature file: one YAML file with your details, which of them show, the look, and your photo and logo as
- * base64. It opens in any browser's Studio.
+ * base64, along with any credential badges. It opens in any browser's Studio.
  */
 import { Document, Scalar, isMap, isScalar, parse } from 'yaml';
 import { DEFAULTS, EMAIL_PROFILE_OPTIONS, STYLE_KEY_LIST, designById, isRecord, toState } from './engine.ts';
@@ -25,18 +25,81 @@ const GROUP_NOTES = new Map([
   ['extras', ' Message, sign-off, featured content and developer prompts'],
   ['show', ' What shows in the signature'],
   ['style', ' The look: design, colours and options'],
-  ['images', ' Your photo and logo, as base64'],
+  ['images', ' Your photo, logo and awards, as base64'],
 ]);
 
 /** The style keys in the engine's order, with the animation setting. */
 const STYLE_KEYS: readonly (keyof SignatureState)[] = Object.keys(DEFAULTS).filter(
   (k): k is keyof SignatureState => (STYLE_KEY_LIST as readonly string[]).includes(k) || k === 'motion',
 );
+const BRAND_STYLE_KEYS = [
+  'template',
+  'colors',
+  'gradient',
+  'cols',
+  'photoPos',
+  'photoSize',
+  'featuredImage',
+  'replyStyle',
+  'iconStyle',
+  'iconFamily',
+  'iconWeight',
+  'iconColor',
+  'font',
+  'textSize',
+  'bgMode',
+  'bgColor',
+] as const satisfies readonly (keyof SignatureState)[];
 
 export interface CurrentSignature {
   state: SignatureState;
   optimize: boolean;
   activeStyleId: string | null;
+}
+
+/** A reusable company look. It deliberately excludes personal details, photos and badges. */
+export function brandTemplateYaml(state: SignatureState): string {
+  const doc = new Document({
+    brandTemplate: 1,
+    company: state.company,
+    style: pickKeys(state, BRAND_STYLE_KEYS),
+    show: { logo: state.show.logo },
+    images: state.logo.src ? { logo: imageOf(state.logo.src) } : {},
+  });
+  doc.commentBefore = ' Company brand and layout only. Personal details, photos and awards are not included.';
+  return doc.toString({ lineWidth: 0 });
+}
+
+export type OpenedBrandTemplate = { ok: true; state: SignatureState; message: string } | { ok: false; message: string };
+
+/** Opens only the company brand and layout, keeping the current person's details, photo and awards. */
+export function readBrandTemplate(text: string, current: SignatureState): OpenedBrandTemplate {
+  let data: unknown;
+  try {
+    data = parse(text, { prettyErrors: false });
+  } catch {
+    return { ok: false, message: 'That file is not a Signature Studio company template.' };
+  }
+  if (!isRecord(data) || data['brandTemplate'] !== 1)
+    return { ok: false, message: 'That file is not a supported Signature Studio company template.' };
+  const style = isRecord(data['style']) ? data['style'] : {};
+  const look: Record<string, unknown> = {};
+  for (const key of BRAND_STYLE_KEYS) if (style[key] !== undefined) look[key] = style[key];
+  const show = isRecord(data['show']) ? data['show'] : {};
+  const images = isRecord(data['images']) ? data['images'] : {};
+  const logo = readImage(images['logo']);
+  const company = typeof data['company'] === 'string' ? data['company'] : current.company;
+  return {
+    ok: true,
+    state: toState({
+      ...current,
+      ...look,
+      company,
+      show: { ...current.show, ...(typeof show['logo'] === 'boolean' ? { logo: show['logo'] } : {}) },
+      logo: { src: logo?.src ?? '' },
+    }),
+    message: 'Company template opened. Your personal details, photo and awards stay unchanged.',
+  };
 }
 
 const DATA_URL = /^data:(image\/(?:png|jpeg|gif|webp));base64,([A-Za-z0-9+/=]+)$/;
@@ -82,9 +145,11 @@ export function signatureYaml(cur: CurrentSignature, withPhoto: boolean, now = n
     };
   }
   images['logo'] = imageOf(s.logo.src);
+  if (s.badges.length)
+    images['badges'] = s.badges.map(({ name, url, src, visible }) => ({ name, url, visible, ...imageOf(src) }));
   const doc = new Document({
     signature: SIGNATURE_FILE_VERSION,
-    emailProfile: s.emailProfile,
+    emailProfiles: [...s.emailProfiles],
     saved: now.toISOString(),
     details: pickKeys(s, DETAIL_GROUPS.details),
     contact: pickKeys(s, DETAIL_GROUPS.contact),
@@ -183,7 +248,14 @@ function readGrouped(data: Record<string, unknown>, current: SignatureState, fil
   if (typeof version === 'number' && version > SIGNATURE_FILE_VERSION)
     return { ok: false, message: NEWER_SIGNATURE_FILE };
   if (version !== 1 && version !== SIGNATURE_FILE_VERSION) return { ok: false, message: NOT_A_SIGNATURE_FILE };
-  if (data['emailProfile'] !== undefined && !EMAIL_PROFILE_OPTIONS.some((p) => p.id === data['emailProfile']))
+  const profiles = data['emailProfiles'];
+  if (
+    profiles !== undefined
+      ? !Array.isArray(profiles) ||
+        !profiles.length ||
+        profiles.some((id) => !EMAIL_PROFILE_OPTIONS.some((p) => p.id === id))
+      : data['emailProfile'] !== undefined && data['emailProfile'] !== 'outlook'
+  )
     return { ok: false, message: 'This email profile is not supported by this version of Signature Studio.' };
   const known = new Set<string>(DETAIL_KEYS);
   const text: Record<string, unknown> = {};
@@ -201,15 +273,21 @@ function readGrouped(data: Record<string, unknown>, current: SignatureState, fil
   const images = isRecord(data['images']) ? data['images'] : {};
   const photo = readImage(images['photo']);
   const logo = readImage(images['logo']);
+  const badges: readonly unknown[] = Array.isArray(images['badges']) ? images['badges'] : [];
   const kept = !photo && !!current.photo.src;
   const state = toState({
-    emailProfile: data['emailProfile'] ?? 'outlook',
+    emailProfiles: profiles,
     ...emptyDetails(),
     ...text,
     ...look,
     show: isRecord(data['show']) ? data['show'] : {},
     photo: photo ?? current.photo,
     logo: { src: logo ? logo.src : current.logo.src },
+    badges: badges.flatMap((badge) =>
+      isRecord(badge)
+        ? [{ name: badge['name'], url: badge['url'], visible: badge['visible'], src: readImage(badge)?.src }]
+        : [],
+    ),
   });
   const active = style['activeStyle'];
   return {

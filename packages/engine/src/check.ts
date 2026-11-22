@@ -1,8 +1,9 @@
 import { dataUrlBytes, weight } from './build.ts';
 import { contrast } from './color.ts';
+import { badgeVerificationUrl } from './content.ts';
 import { keepAsOutlook } from './compatibility.ts';
 import { canHand } from './name.ts';
-import { FONT_OPTIONS, TEXT_SIZE_OPTIONS } from './options.ts';
+import { EMAIL_PROFILE_OPTIONS, FONT_OPTIONS, TEXT_SIZE_OPTIONS } from './options.ts';
 import type { BuildResult, Motion, ShowFlags, Version } from './types.ts';
 
 export {
@@ -295,6 +296,7 @@ export interface FeatureItem {
 }
 
 export interface VersionHealth {
+  compatibility: { profile: BuildResult['state']['emailProfiles'][number]; status: CheckStatus; text: string }[];
   version: Version;
   subject: string;
   items: CheckItem[];
@@ -363,7 +365,7 @@ function featureCoverage(res: BuildResult, box: HTMLElement): FeatureItem[] {
   const hrefs = [...box.querySelectorAll('a')].map((a) => a.getAttribute('href') ?? '');
   const used = new Set([...box.querySelectorAll('img')].map((im) => im.getAttribute('src')));
   const hasKind = (kind: string): boolean =>
-    Object.values(res.images).some((im) => im.kind === kind && used.has(im.dataURL));
+    Object.values(res.images).some((im) => im.kind === kind && !im.name.startsWith('badge_') && used.has(im.dataURL));
   return Object.entries(FEATURE_NAMES).map(([id, title]) => {
     const enabled = id === 'quoteBy' ? s.show.quote && s.show.quoteBy !== false : Reflect.get(s.show, id) === true;
     const item = (status: CheckStatus, detail: string): FeatureItem => ({ id, title, status, text: detail });
@@ -371,6 +373,8 @@ function featureCoverage(res: BuildResult, box: HTMLElement): FeatureItem[] {
     if (id === 'photo') {
       if (res.template.id === 'minimal') return item('na', 'Minimal is intentionally photo-free.');
       if (res.template.id === 'monogram') return item('na', 'This design uses an initials badge instead of a photo.');
+      if (res.images['photo']?.kind === 'logo' && used.has(res.images['photo'].dataURL))
+        return item('pass', 'Company logo rendered in the featured image slot.');
       return item(
         hasKind('photo') ? 'pass' : res.version === 'reply' ? 'na' : 'warning',
         hasKind('photo')
@@ -587,6 +591,25 @@ async function checkVersion(res: BuildResult, stage: HTMLElement, signal?: Abort
   };
   const box = mount(stage, res.html('embed'), 'light');
   const features = featureCoverage(res, box);
+  if (res.state.badges.some((badge) => badge.visible)) {
+    const invalid = res.state.badges.filter(
+      ({ url, visible }) => visible && url.trim() && !badgeVerificationUrl(url),
+    ).length;
+    features.push({
+      id: 'badges',
+      title: 'Awards and certificates',
+      status: res.version === 'reply' ? 'na' : invalid ? 'warning' : 'pass',
+      text:
+        res.version === 'reply'
+          ? 'Badges are omitted in replies.'
+          : invalid
+            ? `${invalid} badge verification links need a valid web address.`
+            : `${res.state.badges.filter((badge) => badge.visible).length} badges included.`,
+    });
+  }
+  const rounded = [...box.querySelectorAll<HTMLElement>('[style]')].some((el) => Boolean(el.style.borderRadius));
+  const links = box.querySelectorAll('a').length;
+  const visibleImages = [...box.querySelectorAll('img')].filter((im) => Number(im.getAttribute('width')) > 1);
   add(
     'identity',
     res.state.fullName.trim() ? 'pass' : 'warning',
@@ -754,7 +777,7 @@ async function checkVersion(res: BuildResult, stage: HTMLElement, signal?: Abort
       ? validBase
         ? 'HTTPS hosting base is configured. Upload the image package and verify access without signing in; remote images may be blocked. No network request was made.'
         : 'Hosted images need a valid public HTTPS base URL in Files.'
-      : 'Embedded images work in Studio. Paste, save and send a test to verify Outlook keeps them. For classic Outlook, use its image-file package.',
+      : 'Embedded images work in Studio. Paste, save and send a test to verify your email app keeps them.',
   );
   const absent = features.filter((f) => f.status === 'warning');
   add(
@@ -768,10 +791,52 @@ async function checkVersion(res: BuildResult, stage: HTMLElement, signal?: Abort
   add(
     'native',
     'manual',
-    'Real Outlook test',
-    'Required even when automated checks pass: paste, save, send, receive, reply and forward. Check native dark mode, blocked images, the static frame and screen-reader order. Classic Word rendering is not simulated.',
+    'Real email app test',
+    'Required even when automated checks pass: paste, save, send, receive, reply and forward. Check native dark mode, blocked images, the static frame and screen-reader order. Word and Apple Mail are not simulated.',
   );
-  return { version: res.version, subject: base.subject, items, features };
+  const compatibility: VersionHealth['compatibility'] = EMAIL_PROFILE_OPTIONS.filter(({ id }) =>
+    res.state.emailProfiles.includes(id),
+  ).map(({ id }) => {
+    if (id === 'outlook-classic')
+      return {
+        profile: id,
+        status: animated || rounded || (visibleImages.length && !hosted) ? 'warning' : 'manual',
+        text: [
+          animated
+            ? `${animated} animated PNG images may show only a still frame. Turn off animation if you need predictable output.`
+            : '',
+          rounded ? 'Rounded card corners may become square.' : '',
+          visibleImages.length
+            ? hosted
+              ? 'Hosted images may be blocked by the recipient. Verify image delivery.'
+              : 'Use Classic Outlook (.zip) to install the signature with local image files.'
+            : '',
+          'Test in classic Outlook for Windows.',
+        ]
+          .filter(Boolean)
+          .join(' '),
+      };
+    if (id === 'apple-mail')
+      return {
+        profile: id,
+        status: 'warning',
+        text: `On iPhone and iPad, use Plain text. The signature editor drops HTML formatting${visibleImages.length ? ` and all ${visibleImages.length} images` : ''}${links ? `; check that the text version keeps the addresses or URLs you need` : ''}. On Mac, paste the formatted signature and send a rich-text test${animated ? ' to verify animation or turn it off for a predictable still version' : ''}.`,
+      };
+    return {
+      profile: id,
+      status: pasteProblems.length || phoneProblems.length ? 'warning' : 'manual',
+      text: [
+        pasteProblems.length || phoneProblems.length
+          ? 'Review the layout warnings above before pasting.'
+          : 'The signature fits the browser and observed Outlook paste models.',
+        visibleImages.length ? 'Send a test to verify image delivery.' : '',
+        animated ? 'Verify playback and the still frame in your Outlook version.' : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+    };
+  });
+  return { version: res.version, subject: base.subject, items, features, compatibility };
 }
 
 /** Checks both built versions, without fetching links, fonts or remote image resources. */

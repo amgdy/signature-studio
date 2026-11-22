@@ -336,16 +336,32 @@ export function MoreActions({ shown }: { shown: SignatureBuild }) {
       >
         Classic Outlook (.zip)
       </Secondary>
-      <Secondary
-        title="Save the signature as an HTML file"
-        icon={<FileDownIcon />}
-        testId="save-html"
-        disabled={none}
-        onClick={a.saveHtmlFile}
-      >
-        Save .html
-      </Secondary>
     </Group>
+  );
+}
+
+function DownloadButton({ shown, compact = false }: { shown: SignatureBuild; compact?: boolean }) {
+  const { saveHtmlFile } = useCopyActions(shown);
+  const label = shown.result?.version === 'reply' ? 'Download reply HTML' : 'Download new-message HTML';
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            variant="outline"
+            size={compact ? 'icon' : 'lg'}
+            aria-label={label}
+            disabled={!shown.result || shown.building || Boolean(shown.error)}
+            onClick={saveHtmlFile}
+            data-testid="save-html"
+          />
+        }
+      >
+        <FileDownIcon />
+        {compact ? null : 'Download HTML'}
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -469,8 +485,9 @@ export function PreviewPanel({ narrow }: { narrow: boolean }) {
           <AccessibilityReadout result={result} />
         </div>
         {narrow ? null : (
-          <div className="flex items-center gap-3 border-t px-4 py-3 *:[button]:shrink-0">
+          <div className="flex flex-wrap items-center gap-2 border-t px-4 py-3">
             <CopyButton shown={shown} />
+            <DownloadButton shown={shown} />
             {weightCaption}
           </div>
         )}
@@ -501,7 +518,7 @@ export function BottomBar() {
   const a = useCopyActions(shown);
   return (
     <div
-      className="sticky bottom-0 z-20 flex items-center justify-between gap-2 border-t bg-card px-3 py-2 whitespace-nowrap shadow-[0_-4px_12px_rgb(0_0_0/0.08)] *:shrink-0"
+      className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-2 border-t bg-card px-3 py-2 whitespace-nowrap shadow-[0_-4px_12px_rgb(0_0_0/0.08)] *:shrink-0"
       data-testid="bottom-bar"
     >
       <Segmented
@@ -512,10 +529,17 @@ export function BottomBar() {
         size="medium"
         testId="seg-show"
       />
-      <Button disabled={!result || Boolean(shown.error)} onClick={() => void a.copy()} data-testid="copy-signature-bar">
-        <CopyIcon />
-        {result?.version === 'reply' ? 'Copy reply' : 'Copy signature'}
-      </Button>
+      <div className="flex items-center gap-1">
+        <Button
+          disabled={!result || Boolean(shown.error)}
+          onClick={() => void a.copy()}
+          data-testid="copy-signature-bar"
+        >
+          <CopyIcon />
+          {result?.version === 'reply' ? 'Copy reply' : 'Copy signature'}
+        </Button>
+        <DownloadButton shown={shown} compact />
+      </div>
     </div>
   );
 }

@@ -770,10 +770,12 @@ export function LogoPicker() {
   const src = useSignatureStore((st) => st.state.logo.src);
   const shown = useSignatureStore((st) => st.state.show.logo);
   const setLogo = useSignatureStore((st) => st.setLogo);
+  const update = useSignatureStore((st) => st.update);
+  const template = useSignatureStore((st) => st.state.template);
+  const isMain = useSignatureStore((st) => st.state.featuredImage === 'logo' && Boolean(st.state.logo.src));
   const upload = useLogoUpload();
   return (
     <Group label="Company logo" className="flex flex-col gap-2" testId="logo-group">
-      <span className="text-sm font-medium">Company logo</span>
       <div className="flex flex-wrap items-center gap-3">
         <span
           className="flex size-14 items-center justify-center rounded-md border border-dashed text-[10px]"
@@ -801,17 +803,41 @@ export function LogoPicker() {
           {src ? 'Change logo' : 'Upload logo'}
         </FileButton>
         {src ? (
-          <Button variant="ghost" onClick={() => setLogo('')} data-testid="remove-logo">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setLogo('');
+              if (isMain) update({ featuredImage: 'photo' });
+            }}
+            data-testid="remove-logo"
+          >
             <Trash2Icon />
             Remove logo
           </Button>
         ) : null}
       </div>
-      <ShowSwitch flag="logo" label="Show logo" />
+      {src && (isMain || template !== 'minimal') ? (
+        <div>
+          <Button
+            variant="outline"
+            onClick={() => {
+              const { state } = useSignatureStore.getState();
+              update({ featuredImage: isMain ? 'photo' : 'logo', show: { ...state.show, photo: true } });
+            }}
+          >
+            {isMain ? 'Use personal photo instead' : 'Use logo as main image'}
+          </Button>
+        </div>
+      ) : null}
+      {isMain ? (
+        <Note live>The logo replaces the personal photo wherever this design shows one.</Note>
+      ) : (
+        <ShowSwitch flag="logo" label="Show logo" />
+      )}
       <Note live>
         {shown && !src
-          ? 'No logo uploaded yet, so none shows. Upload a square logo mark. Your company name shows beside it.'
-          : 'Upload a square logo mark. Your company name shows beside it. PNG, JPEG, GIF or WebP; it is scaled to fit 128 × 128.'}
+          ? 'No logo uploaded yet, so none shows.'
+          : 'Upload a PNG, JPEG, GIF or WebP logo. The full image fits without cropping.'}
       </Note>
     </Group>
   );

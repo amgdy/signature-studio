@@ -121,9 +121,16 @@ export interface ColorSettings {
   gradient: boolean;
 }
 
+export interface CredentialBadge {
+  src: string;
+  name: string;
+  url: string;
+  visible: boolean;
+}
+
 /** Everything the Studio saves: the look and the person's details. */
 export interface SignatureState extends FeaturedFields, StatFields, ColorSettings {
-  emailProfile: EmailProfile;
+  emailProfiles: EmailProfile[];
   template: string;
   photoAnim: PhotoAnim;
   nameStyle: NameStyle;
@@ -137,6 +144,8 @@ export interface SignatureState extends FeaturedFields, StatFields, ColorSetting
   cols: ColumnsSetting;
   photoPos: PhotoPosition;
   photoSize: PhotoSize;
+  featuredImage: 'photo' | 'logo';
+  badges: CredentialBadge[];
   replyStyle: ReplyStyle;
   iconStyle: IconStyle;
   iconFamily: IconFamily;
@@ -196,6 +205,8 @@ export type StateInput = {
     ? Partial<SignatureState[K]> | null
     : SignatureState[K] | null;
 } & {
+  /** Legacy single profile. */
+  emailProfile?: string;
   /** Legacy input only: expanded into colour settings when `colors` is absent. */
   theme?: string;
   customColors?: readonly string[];

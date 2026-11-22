@@ -323,13 +323,10 @@ export interface CopyActions {
   copyHtml: () => Promise<void>;
   copyText: () => Promise<void>;
   saveHtmlFile: () => void;
+  saveTextFile: () => void;
   outlookPackage: () => Promise<void>;
   imagesPackage: () => Promise<void>;
 }
-
-const PROFILE_HINTS = {
-  outlook: 'In Outlook open Settings › Signatures, click into the editor and press Ctrl+V.',
-};
 
 async function bothVersions(): Promise<BuildResult[]> {
   const { state } = useSignatureStore.getState();
@@ -370,9 +367,9 @@ export function useCopyActions({ result, error, building }: SignatureBuild): Cop
     const which = shown.version === 'reply' ? 'Reply signature' : 'Signature';
     try {
       await copyRich(shown.html(mode, hosting.base), shown.text);
-      notify(`${which} copied. ${PROFILE_HINTS[shown.state.emailProfile]}`);
+      notify(`${which} copied. See Use for setup steps for your email apps.`);
     } catch {
-      notify('This view blocks the clipboard. Open the file in Edge or Chrome, or use Save .html.', 'warning');
+      notify('This view blocks the clipboard. Open the file in Edge or Chrome, or use Download HTML.', 'warning');
     }
   }, [notify, ready]);
 
@@ -384,7 +381,7 @@ export function useCopyActions({ result, error, building }: SignatureBuild): Cop
       await copyText(shown.html(hostingMode({ hosting }), hosting.base));
       notify('HTML code copied.');
     } catch {
-      notify('This view blocks the clipboard. Use Save .html instead.', 'warning');
+      notify('This view blocks the clipboard. Use Download HTML instead.', 'warning');
     }
   }, [notify, ready]);
 
@@ -403,8 +400,11 @@ export function useCopyActions({ result, error, building }: SignatureBuild): Cop
     const shown = ready();
     if (!shown) return;
     const { hosting } = useSignatureStore.getState().state;
-    downloadHtml(shown, hostingMode({ hosting }), hosting.base);
-    notify('HTML file saved.');
+    const mode = hostingMode({ hosting });
+    downloadHtml(shown, mode, hosting.base);
+    if (hosting.mode === 'hosted' && mode !== 'hosted')
+      notify('HTML downloaded with embedded images. Add a valid image folder URL to export hosted images.', 'warning');
+    else notify('HTML file downloaded.');
   }, [notify, ready]);
 
   const saveOutlook = useCallback(async () => {
@@ -418,6 +418,14 @@ export function useCopyActions({ result, error, building }: SignatureBuild): Cop
       notify(`The package could not be built: ${errorText(e)}`, 'warning');
     }
   }, [notify]);
+
+  const saveTextFile = useCallback(() => {
+    const shown = ready();
+    if (!shown) return;
+    const suffix = shown.version === 'reply' ? '-reply' : '-new-message';
+    download(new Blob([shown.text], { type: 'text/plain;charset=utf-8' }), `signature${suffix}.txt`);
+    notify(`Saved the ${shown.version === 'reply' ? 'reply' : 'new-message'} plain-text signature.`);
+  }, [notify, ready]);
 
   const saveImages = useCallback(async () => {
     try {
@@ -434,6 +442,7 @@ export function useCopyActions({ result, error, building }: SignatureBuild): Cop
     copyHtml,
     copyText: copyPlain,
     saveHtmlFile,
+    saveTextFile,
     outlookPackage: saveOutlook,
     imagesPackage: saveImages,
   };
@@ -472,7 +481,7 @@ function setUploadedPhoto(src: string): void {
   sig.setShow('photo', true);
 }
 
-/** Puts an uploaded logo in the signature, scaled down to fit a 128 px square, as a PNG, and switches the logo on. */
+/** Puts an uploaded logo in the signature, scaled down to fit a 512 px square, as a PNG, and switches the logo on. */
 export function useLogoUpload(): Upload {
   return useUpload(readLogo, setUploadedLogo, 'Logo updated.');
 }
@@ -664,10 +673,10 @@ export function useFileActions(): FileActions {
       } else {
         const next = which === 'blank' ? blankState() : sampleState();
         useSignatureStore.getState().replace(next, { activeStyleId: null, optimize: true });
-        if (which === 'blank') useUiStore.getState().setPane('details');
+        useUiStore.getState().goHome();
         message =
           which === 'blank'
-            ? 'Blank signature ready. Add your name in Details.'
+            ? 'Blank signature ready. Choose a design, then add your details.'
             : `Sample person: ${next.fullName}. Every setting is back to its default.`;
       }
       useUiStore.getState().setFileNote(message);

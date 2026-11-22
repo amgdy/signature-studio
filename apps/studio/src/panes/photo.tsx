@@ -1,15 +1,16 @@
 /* The Photo section: upload or drop a photo, its shape, size, look, animation, and zoom and position. */
 import { cn } from 'cn';
-import { ImagePlusIcon, RotateCcwIcon } from 'lucide-react';
+import { ImagePlusIcon, RotateCcwIcon, Trash2Icon } from 'lucide-react';
 import { useCallback, useId, useState } from 'react';
 import type { DragEvent } from 'react';
 import { Button } from '../components/ui/button.tsx';
+import { Input } from '../components/ui/input.tsx';
 import { Label } from '../components/ui/label.tsx';
 import { Slider } from '../components/ui/slider.tsx';
-import { ANIMS, LOOKS, PHOTO_SIZES, SHAPES, previewPhoto } from '../engine.ts';
+import { ANIMS, LOOKS, MAX_BADGES, PHOTO_SIZES, SHAPES, badgeVerificationUrl, previewPhoto } from '../engine.ts';
 import type { PhotoSettings, PhotoShape, SignatureState } from '../engine.ts';
-import { animationNote, motionNote, photoSizeNote } from '../fields.ts';
-import { useCurrentSignature, useDebouncedValue, usePhotoUpload } from '../hooks.tsx';
+import { LOGO_TYPES, animationNote, motionNote, photoSizeNote, readLogo } from '../fields.ts';
+import { useCurrentSignature, useDebouncedValue, useNotify, usePhotoUpload } from '../hooks.tsx';
 import { useSignatureStore } from '../store.ts';
 import { LogoPicker } from './layout.tsx';
 import {
@@ -237,14 +238,146 @@ function PhotoAdjust() {
     </div>
   );
 }
+function editBadge(index: number, field: 'name' | 'url', value: string) {
+  const { state, update } = useSignatureStore.getState();
+  const badge = state.badges[index];
+  if (badge) update({ badges: state.badges.with(index, { ...badge, [field]: value }) });
+}
+
+function moveBadge(index: number, direction: -1 | 1) {
+  const { state, update } = useSignatureStore.getState();
+  const next = index + direction;
+  if (next < 0 || next >= state.badges.length) return;
+  const badges = [...state.badges];
+  const [badge] = badges.splice(index, 1);
+  if (badge) badges.splice(next, 0, badge);
+  update({ badges });
+}
+
+function showBadge(index: number, visible: boolean) {
+  const { state, update } = useSignatureStore.getState();
+  const badge = state.badges[index];
+  if (badge) update({ badges: state.badges.with(index, { ...badge, visible }) });
+}
+
+function Awards() {
+  const badges = useSignatureStore((st) => st.state.badges);
+  const notify = useNotify();
+  const [uploading, setUploading] = useState(false);
+  async function addBadge(file: File) {
+    setUploading(true);
+    try {
+      const src = await readLogo(file);
+      const { state, update } = useSignatureStore.getState();
+      if (state.badges.length >= MAX_BADGES) {
+        notify(`You can add up to ${MAX_BADGES} badges.`, 'warning');
+        return;
+      }
+      update({ badges: [...state.badges, { src, name: file.name.replace(/\.[^.]+$/, ''), url: '', visible: true }] });
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'The badge could not be read.', 'warning');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <Section title="Awards and certificates" hint={`${badges.length} of ${MAX_BADGES}`}>
+      <Note>Badges appear in one row on new messages. Use an image and add a verification link if you have one.</Note>
+      {badges.map((badge, i) => {
+        const number = i + 1;
+        const invalid = Boolean(badge.url.trim() && !badgeVerificationUrl(badge.url));
+        return (
+          <div
+            key={`badge-${number}`}
+            className="flex items-start gap-3 rounded-md border p-3"
+            data-badge={number}
+            data-testid={`badge-${number}`}
+          >
+            <img src={badge.src} alt="" className="size-12 shrink-0 rounded-sm bg-card object-contain" />
+            <div className="grid min-w-0 flex-1 gap-2">
+              <Input
+                aria-label={`Badge ${number} name`}
+                placeholder="Badge name"
+                maxLength={120}
+                value={badge.name}
+                onChange={(e) => editBadge(i, 'name', e.currentTarget.value)}
+              />
+              <Input
+                aria-label={`Badge ${number} verification link`}
+                aria-invalid={invalid || undefined}
+                placeholder="Verification link (optional)"
+                maxLength={2048}
+                value={badge.url}
+                onChange={(e) => editBadge(i, 'url', e.currentTarget.value)}
+              />
+              {invalid ? <Note warn>Enter a valid web address. The badge won’t link until it’s valid.</Note> : null}
+              <SwitchField
+                label={`Show badge ${number}`}
+                checked={badge.visible}
+                onCheckedChange={(visible) => showBadge(i, visible)}
+              />
+              <div className="flex gap-1">
+                <Button variant="outline" size="sm" disabled={i === 0} onClick={() => moveBadge(i, -1)}>
+                  Move up
+                </Button>
+                <Button variant="outline" size="sm" disabled={i === badges.length - 1} onClick={() => moveBadge(i, 1)}>
+                  Move down
+                </Button>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Remove badge ${number}`}
+              onClick={() => {
+                const { state, update } = useSignatureStore.getState();
+                update({ badges: state.badges.filter((_, idx) => idx !== i) });
+              }}
+            >
+              <Trash2Icon />
+            </Button>
+          </div>
+        );
+      })}
+      {badges.length < MAX_BADGES && !uploading ? (
+        <div>
+          <FileButton
+            accept={LOGO_TYPES.join(',')}
+            icon={<ImagePlusIcon />}
+            onFile={(file) => void addBadge(file)}
+            inputTestId="badge-file"
+          >
+            Add award or certificate
+          </FileButton>
+        </div>
+      ) : null}
+      {uploading ? <Note live>Reading the badge…</Note> : null}
+    </Section>
+  );
+}
+
 export function PhotoPane() {
   const state = useSignatureStore((st) => st.state);
   const update = useSignatureStore((st) => st.update);
+  const logoIsMain = state.featuredImage === 'logo' && Boolean(state.logo.src);
   return (
     <Pane id="photo">
-      <Section title="Photo" hint={state.photo.src ? 'Uploaded photo' : 'Default photo'}>
-        <PhotoSource />
-        <ShapePicker />
+      <Section
+        title="Main image"
+        hint={logoIsMain ? 'Company logo' : state.photo.src ? 'Uploaded photo' : 'Default photo'}
+      >
+        {logoIsMain ? (
+          <>
+            <Note>Your company logo fits without cropping or photo effects.</Note>
+            <ShowSwitch flag="photo" label="Show main image" />
+          </>
+        ) : (
+          <>
+            <PhotoSource />
+            <ShapePicker />
+          </>
+        )}
         <ControlGroup label="Size" note={photoSizeNote(state)}>
           <Segmented
             label="Photo size"
@@ -264,33 +397,38 @@ export function PhotoPane() {
             testId="seg-photo-size"
           />
         </ControlGroup>
-        <ControlGroup label="Look">
-          <Segmented
-            label="Photo look"
-            value={state.photoLook}
-            options={LOOKS}
-            onChange={(photoLook) =>
-              update({
-                photoLook,
-              })
-            }
-            wide
-            testId="seg-look"
-          />
-        </ControlGroup>
-        <ControlGroup label="Animation" note={animationNote(state)}>
-          <Segmented
-            label="Photo animation"
-            value={state.photoAnim}
-            options={ANIMS}
-            onChange={(photoAnim) =>
-              update({
-                photoAnim,
-              })
-            }
-            testId="seg-anim"
-          />
-        </ControlGroup>
+        {!logoIsMain ? (
+          <>
+            <ControlGroup label="Look">
+              <Segmented
+                label="Photo look"
+                value={state.photoLook}
+                options={LOOKS}
+                onChange={(photoLook) =>
+                  update({
+                    photoLook,
+                  })
+                }
+                wide
+                testId="seg-look"
+              />
+            </ControlGroup>
+            <ControlGroup label="Animation" note={animationNote(state)}>
+              <Segmented
+                label="Photo animation"
+                value={state.photoAnim}
+                options={ANIMS}
+                onChange={(photoAnim) =>
+                  update({
+                    photoAnim,
+                  })
+                }
+                testId="seg-anim"
+              />
+            </ControlGroup>
+            <PhotoAdjust />
+          </>
+        ) : null}
         <div className="flex flex-col gap-2.5">
           <ShowSwitch flag="animate" label="Animations (photo, shimmer, sparkle, mesh, handwriting)" />
           <SwitchField
@@ -305,11 +443,11 @@ export function PhotoPane() {
           />
           <Note live>{motionNote(state)}</Note>
         </div>
-        <PhotoAdjust />
       </Section>
       <Section title="Company logo">
         <LogoPicker />
       </Section>
+      <Awards />
     </Pane>
   );
 }

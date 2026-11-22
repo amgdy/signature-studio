@@ -20,7 +20,7 @@ The Executive design, with a handwritten name and an animated photo ring:
 - **36 designs**, including 12 for industries such as finance, legal, healthcare and education.
 - **1, 2 or 3 columns** in every design, and a fit on a 343 px phone.
 - **Your photo and logo**, with 15 shapes, 4 sizes, 4 looks and animations that stop within 5 seconds.
-- **33 colour palettes** you can edit, local fonts, 17 icon styles and 10 handwriting styles.
+- **33 colour palettes** you can edit, local fonts, 17 icon styles and 14 handwriting styles.
 - **6 short reply versions.**
 - **19 health checks** for each version: accessibility, images, animation, phone fit and Outlook paste survival.
 - **Compare** designs and styles side by side, and save your own styles.

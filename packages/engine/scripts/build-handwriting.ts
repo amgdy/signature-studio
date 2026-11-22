@@ -74,6 +74,10 @@ const FONTS: readonly FontSource[] = [
     from: 'Source Sans Pro-Light',
     designer: 'Paul D. Hunt, Adobe',
   },
+  { id: 'felix', label: 'Italic script', file: 'EMSFelix', from: 'Felipa', designer: 'Fontstage' },
+  { id: 'invite', label: 'Formal signature', file: 'EMSInvite', from: 'Tangerine', designer: 'Toshi Omagari' },
+  { id: 'league', label: 'Light cursive', file: 'EMSLeague', from: 'League Script', designer: 'Haley Fiege' },
+  { id: 'tech', label: 'Architect print', file: 'EMSTech', from: 'Architects Daughter', designer: 'Kimberly Geswein' },
 ];
 
 const CREDIT =

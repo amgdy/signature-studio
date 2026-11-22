@@ -8,22 +8,22 @@ The Studio has five sections, in the order you usually need them:
 
 | Section | What it holds                                                     |
 | ------- | ----------------------------------------------------------------- |
-| Details | Profile, Contact, Photo & logo, and Extras                        |
 | Design  | The gallery of designs and styles, Compare, and your saved styles |
+| Details | Profile, Contact, Images, and Extras                              |
 | Style   | Layout & colour, Typography, Icons, and Reply                     |
 | Check   | The signature health report                                       |
 | Use     | Copy, export, install, signature files and Start over             |
 
-You can open any section at any time. The arrow keys move between sections and tabs.
+Start in Design and select **Continue to Details** when ready. You can open any section at any time. The arrow keys move between sections and tabs.
 
-- **Header:** select the Signature Studio logo to go back to the start: Details, with the New message preview. Your work stays. The Start over menu sits beside the logo. On the right are Email profile, App appearance, Open signature file and Save signature file.
-- **Email profile:** Outlook, selected by default. It covers new Outlook, Outlook on the web, classic Outlook for Windows, Outlook for Mac and Outlook mobile. Other email apps are not supported yet.
+- **Header:** select the Signature Studio logo to go back to Design and the New message preview. Your work stays. The Start over menu sits beside the logo. On the right are Email profiles, App appearance, Open signature file, Save signature file and Reset everything. Reset asks for confirmation before clearing your work.
+- **Email profiles:** choose one or more: Microsoft Outlook (new, web, Mac and mobile), Microsoft Outlook (Classic) for Windows, or Apple Mail. Both Outlook profiles are selected by default. The selection changes compatibility advice and setup instructions, not the exported HTML.
 - **App appearance:** Auto, Light or Dark. Auto follows your device. It changes only the editor, never the signature.
 - **Preview toolbar:** New message or Reply; Preview or Compare; Light or Dark; Desktop, Tablet or Phone; and Replay for animations. These change only how you view the signature.
-- **Under the preview:** an accessibility summary, and Copy signature with the design name, image count and size.
+- **Under the preview:** Copy signature and Download HTML for the version shown, with the design name, image count and size.
 - **Footer:** the app version, build number and build date in UTC. Select it to open the matching GitHub Actions run. Local builds show **Local build** instead.
-- **Wide screens:** the header, section tabs, preview toolbar and Copy signature stay in view while the settings and the preview scroll.
-- **Phones and narrow windows:** one scrolling column with sticky section tabs, and a bottom bar with Edit, Preview and Copy signature.
+- **Wide screens:** drag the divider to resize the settings panel, or focus it and press the Left or Right arrow key. The settings and the preview scroll separately.
+- **Phones and narrow windows:** one scrolling column with sticky section tabs, and a bottom bar with Edit, Preview, Copy and Download HTML.
 
 ## Details
 
@@ -49,7 +49,7 @@ Each field has a show switch beside it. A hidden field is left out of every desi
 
 Each group has a **Show in** setting: _Designs made for it_ or _Every design_. With _Every design_, a compact block is added to the other designs.
 
-## Photo and logo
+## Images
 
 **Photo**
 
@@ -65,6 +65,14 @@ Minimal has no photo. Monogram Card shows your initials instead, and the size se
 **Company logo**
 
 - Upload a PNG, JPEG, GIF or WebP logo, then turn on **Show logo**. No logo is built in.
+- Logos are kept up to 512 px on their longest side for sharper featured-image use.
+- After uploading, select **Use logo as main image** to replace the personal photo. The full logo fits without cropping or photo effects. Select **Use personal photo instead** to switch back without deleting either image.
+
+**Awards and certificates**
+
+- Add up to four badge images. Give each badge a name for screen readers and, optionally, a link to its verification page.
+- Hide a badge or move it up and down without removing it.
+- Visible badges appear as still, uncropped images in a single row on new messages. The plain-text version includes their names and links. Replies omit badges.
 - It shows beside your company name in 22 designs: Aurora, Fluent Tiles, Leadership, Foundry Mesh, Azure Essentials, Split Card, Handwritten, Executive, Minimal, Highlights and all 12 industry designs.
 
 ## Designs
@@ -144,7 +152,7 @@ Text colours adjust automatically to stay readable on light and dark backgrounds
 - **Font:** Design default, Arial, Verdana, Trebuchet, Georgia, Times or Courier. Each uses fonts already on the reader's device, with a fallback. No web fonts.
 - **Detail text size:** Standard (11 px), Comfortable (12 px) or Large (13 px).
 - **Name:** typed, or handwritten. A handwritten name is drawn stroke by stroke and plays once.
-- **Handwriting:** 10 styles and 3 pens (Brush pen, Fountain pen and Fine liner). A style that can't write a letter of your name is greyed out.
+- **Handwriting:** 14 styles and 3 pens (Brush pen, Fountain pen and Fine liner). A style that can't write a letter of your name is greyed out.
 
 ### Icons
 
@@ -181,14 +189,19 @@ The Check section tests both the new-message and reply signatures, in light and 
 - email size and image hosting;
 - which of your features show in the chosen design.
 
-**Feature coverage** lists what shows and what doesn't. **Signature requirements** and **Sources** show the Outlook guidance behind the checks. A manual checklist reminds you to paste, send, reply and forward a test in each Outlook app. Passing checks don't certify every Outlook version.
+**Feature coverage** lists what shows and what doesn't. **Email compatibility** flags features that need attention in the selected apps, such as animation in classic Outlook or images in Apple Mail's mobile signature editor, with direct copy or install actions. Each client profile also has a manual test checklist. Its checkboxes record your own tests; they are not browser test results. **Signature requirements** and **Sources** show the guidance behind the checks. Paste, send, reply and forward a test in each target app.
 
 ## Use
 
 - **Copy signature** and **Copy reply signature**, ready to paste.
-- **Plain text**, for Outlook mobile.
-- **HTML code**, **Save .html** and **Classic Outlook (.zip)**.
+- **Download new-message HTML** and **Download reply HTML**, next to their Copy buttons.
+- **Plain text** for Apple Mail on iPhone and iPad or other text-only editors.
+- **HTML code** and **Classic Outlook (.zip)**.
 - **Image hosting:** Embedded (the default) or Hosted on my site, with an image folder URL and **Download images**.
+- **Selected profiles:** Classic Outlook shows its install-package action. Apple Mail also offers downloadable plain-text versions for iPhone and iPad.
+- **Image size:** See the estimated size of each image in the new-message and reply versions.
+- **Company template:** Save or open a separate YAML file with the company name, logo and layout. It excludes personal details, photos and awards; opening one keeps the current person's details, photo and awards.
+- **Storage warning:** The Use section reports whether work is saved on this device, only for the current tab, or in memory. Download a signature file when browser storage is limited.
 
 ### Install in Outlook
 
@@ -199,14 +212,19 @@ The Check section tests both the new-message and reply signatures, in light and 
    - **Outlook for Mac:** Settings > Signatures.
 3. Select **Copy reply signature** and save it as your reply signature.
 
+### Install in Apple Mail
+
+- **Mac:** Open Mail > Settings > Signatures. Add a signature to your account and turn off **Always match my default message font** before pasting. Mail accepts formatted text, links and images. Send a rich-text test to check the layout, image delivery and any animation. Add the reply version as a separate signature and select it when replying.
+- **iPhone and iPad:** Go to Settings > Apps > Mail > Signature and paste **Plain text**. The built-in signature editor does not support HTML, images or animation, even though received messages can contain rich signatures.
+
 ## Signature files
 
-**Save signature file** writes everything to one `.signature.yaml` file: your details, email profile, style and uploaded images. **Open signature file** loads it again, on any computer or browser.
+**Save signature file** writes everything to one `.signature.yaml` file: your details, email profiles, style and uploaded images. **Open signature file** loads it again, on any computer or browser.
 
 ```yaml
 # Signature Studio signature file.
 signature: 2
-emailProfile: outlook
+emailProfiles: [outlook, outlook-classic]
 details: { fullName: Sam Taylor, title: Principal Engineer }
 contact: { email: sam.taylor@contoso.com }
 extras: { tagline: Building things people love to use }
@@ -238,5 +256,6 @@ A random sample takes its first name and surname from the same culture, so they 
 
 - The Studio is one HTML file. It works offline and from disk, and makes no network requests.
 - Your work stays in this browser until you save a signature file.
+- If persistent browser storage is unavailable or full, the Studio reports when it has fallen back to tab-only or in-memory storage and offers a signature-file backup.
 - Signatures have alt text on every image, AA contrast in light and dark mode, text of at least 11 px, and motion that stops within 5 seconds.
 - Every design fits a 343 px phone in 1, 2 and 3 columns.

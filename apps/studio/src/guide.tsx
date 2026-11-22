@@ -129,8 +129,10 @@ const TABS: readonly { id: GuideTab; label: string }[] = [
 ];
 
 /** Step-by-step help for adding the signature to each Outlook. */
-export function OutlookGuide() {
+export function OutlookGuide({ modern, classic }: { modern: boolean; classic: boolean }) {
   const [tab, setTab] = useState<GuideTab>('new');
+  const tabs = TABS.filter((t) => t.id === 'tips' || (t.id === 'classic' ? classic : modern));
+  const active = tabs.find((t) => t.id === tab)?.id ?? tabs[0]?.id;
   const design = useSignatureStore((st) => designById(st.state.template)?.name ?? 'Signature');
   return (
     <Accordion
@@ -144,7 +146,7 @@ export function OutlookGuide() {
         </AccordionTrigger>
         <AccordionContent>
           <Tabs
-            value={tab}
+            value={active}
             onValueChange={(v) => {
               const next = TABS.find((t) => t.id === v);
               if (next) setTab(next.id);
@@ -155,7 +157,7 @@ export function OutlookGuide() {
               aria-label="Outlook versions"
               className="grid w-full grid-cols-2 group-data-horizontal/tabs:h-auto"
             >
-              {TABS.map((t) => (
+              {tabs.map((t) => (
                 <TabsTrigger
                   key={t.id}
                   value={t.id}
@@ -166,12 +168,42 @@ export function OutlookGuide() {
                 </TabsTrigger>
               ))}
             </TabsList>
-            {TABS.map((t) => (
+            {tabs.map((t) => (
               <TabsContent key={t.id} value={t.id} className={PANEL} data-testid="guide-panel">
                 {steps(t.id, design)}
               </TabsContent>
             ))}
           </Tabs>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  );
+}
+
+export function AppleMailGuide() {
+  return (
+    <Accordion defaultValue={['guide']} className="rounded-xl bg-card px-4 ring-1 ring-foreground/10">
+      <AccordionItem value="guide">
+        <AccordionTrigger headingLevel={2} className="py-3 text-base font-semibold">
+          Add it to Apple Mail
+        </AccordionTrigger>
+        <AccordionContent className={PANEL}>
+          <ul>
+            <li>
+              <b>Mac:</b> open Mail › Settings › Signatures, select an account and add a signature. Turn off “Always
+              match my default message font”, then paste the copied signature, not its HTML code. If needed, open the
+              downloaded HTML in a browser and copy the rendered signature from there.
+            </li>
+            <li>
+              Use the account’s <b>Choose Signature</b> menu for a default. Add the reply version separately and select
+              it in the message’s signature menu when you reply. Send a rich-text test to check links, images and
+              motion.
+            </li>
+            <li>
+              <b>iPhone and iPad:</b> select <b>Plain text</b> in Use and paste into Settings › Apps › Mail › Signature.
+              The mobile signature editor does not accept HTML or images.
+            </li>
+          </ul>
         </AccordionContent>
       </AccordionItem>
     </Accordion>

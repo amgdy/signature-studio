@@ -9,9 +9,14 @@ export interface Option {
 }
 
 export const EMAIL_PROFILE_OPTIONS = [
-  { id: 'outlook', label: 'Outlook', note: 'New Outlook, web, classic Windows, Mac and mobile.' },
+  { id: 'outlook', label: 'Microsoft Outlook', note: 'New Outlook, web, Mac and mobile.' },
+  { id: 'outlook-classic', label: 'Microsoft Outlook (Classic)', note: 'Classic Outlook for Windows.' },
+  { id: 'apple-mail', label: 'Apple Mail', note: 'Mail on Mac, iPhone and iPad.' },
 ] as const;
 export type EmailProfile = (typeof EMAIL_PROFILE_OPTIONS)[number]['id'];
+
+export const MAX_BADGES = 4;
+export const BADGE_SIZE = 64;
 
 export const ICON_FAMILY_OPTIONS = [
   { id: 'standard', label: 'Classic', note: 'The original drawing set.' },
@@ -254,6 +259,7 @@ export const STYLE_KEYS: readonly (keyof SignatureState)[] = [
   'cols',
   'photoPos',
   'photoSize',
+  'featuredImage',
   'replyStyle',
   'iconStyle',
   'iconFamily',

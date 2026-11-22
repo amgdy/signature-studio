@@ -4,7 +4,7 @@
 
 Files: `packages/engine/src/data/hwfonts.json` (generated) and `packages/engine/assets-src/fonts/*.svg` (sources).
 
-The ten handwriting styles are single-line (stroke) versions of open-licensed fonts. They were created as EMS fonts by Sheldon B. Michaels, with SVG font conversion by Windell H. Oskay (Evil Mad Scientist Laboratories). They are licensed under the **SIL Open Font License, Version 1.1** (https://openfontlicense.org). Each SVG file carries its own licence metadata. Sources: [SVG Fonts](https://gitlab.com/oskay/svg-fonts/-/tree/master/fonts/EMS); the full licence is in `packages/engine/assets-src/fonts/OFL.txt`.
+The 14 handwriting styles are single-line (stroke) versions of open-licensed fonts. They were created as EMS fonts by Sheldon B. Michaels, with SVG font conversion by Windell H. Oskay (Evil Mad Scientist Laboratories). They are licensed under the **SIL Open Font License, Version 1.1** (https://openfontlicense.org). Each SVG file carries its own licence metadata. Sources: [SVG Fonts](https://gitlab.com/oskay/svg-fonts/-/tree/master/fonts/EMS), also available in the [single-line font mirror](https://github.com/golanlevin/p5-single-line-font-resources/tree/main/p5_single_line_svg_fonts/single_line_svg_fonts/EMS). The full licence is in `packages/engine/assets-src/fonts/OFL.txt`.
 
 | Style in the Studio | EMS font            | Derived from          | Original designer                |
 | ------------------- | ------------------- | --------------------- | -------------------------------- |
@@ -18,10 +18,16 @@ The ten handwriting styles are single-line (stroke) versions of open-licensed fo
 | Looped              | EMS Capitol         | Sacramento            | Brian J. Bonislawsky, Astigmatic |
 | Loose print         | EMS Casual Hand     | Covered By Your Grace | Kimberly Geswein                 |
 | Neat print          | EMS Readability     | Source Sans Pro-Light | Paul D. Hunt, Adobe              |
+| Italic script       | EMS Felix           | Felipa                | Fontstage                        |
+| Formal signature    | EMS Invite          | Tangerine             | Toshi Omagari                    |
+| Light cursive       | EMS League          | League Script         | Haley Fiege                      |
+| Architect print     | EMS Tech            | Architects Daughter   | Kimberly Geswein                 |
 
 In `hwfonts.json` the glyph strokes are simplified and re-encoded. The same notice is embedded in the Studio (`packages/engine/src/data/handwriting-notice.txt`).
 
 ## Icons
+
+The email-profile picker uses the [current Outlook](<https://commons.wikimedia.org/wiki/File:Microsoft_Outlook_Icon_(2025%E2%80%93present).svg>), [classic Outlook](<https://commons.wikimedia.org/wiki/File:Microsoft_Office_Outlook_(2018%E2%80%932024).svg>), and [Apple Mail for iOS](<https://commons.wikimedia.org/wiki/File:Mail_(iOS).svg>) icons from Wikimedia Commons. Commons identifies these files as public domain. The marks identify the corresponding apps; they are not used in exported signatures.
 
 File: `packages/engine/src/data/icons.json`.
 

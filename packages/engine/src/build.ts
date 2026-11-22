@@ -11,12 +11,21 @@ import {
   surfacePalette,
   themeSettings,
 } from './color.ts';
-import { bannerHtml, disclaimerHtml, extrasHtml, photoSpec, plainText, socialsOf, withSignoff } from './content.ts';
+import {
+  badgesHtml,
+  bannerHtml,
+  disclaimerHtml,
+  extrasHtml,
+  photoSpec,
+  plainText,
+  socialsOf,
+  withSignoff,
+} from './content.ts';
 import { byId } from './designs/index.ts';
 import { HP0, HP1, NM, renderContext, tbl, td, textOf, tr, withTypography } from './html.ts';
 import { iconFor, restyle } from './icons.ts';
 import { col3Html, col3Specs, replyHtml, replySpecs, withoutSocials } from './layout.ts';
-import { PHOTO_SIZES, SHOWABLE } from './options.ts';
+import { BADGE_SIZE, PHOTO_SIZES, SHOWABLE } from './options.ts';
 import { renderSpec } from './raster/render.ts';
 import { normalize } from './state.ts';
 import type {
@@ -126,6 +135,7 @@ export function build(state: StateInput | SignatureState, opts?: BuildOptions): 
   const th = resolveTheme(op.theme ? themeSettings(op.theme) : s0);
   const v: Version = op.version === 'reply' ? 'reply' : 'new';
   const fv = viewOf(s0);
+  const featuredLogo = fv.featuredImage === 'logo' && !!fv.logo.src;
   const colsEff =
     fv.cols === 1 || fv.cols === 2
       ? fv.cols
@@ -141,7 +151,7 @@ export function build(state: StateInput | SignatureState, opts?: BuildOptions): 
   const pscale =
     v === 'reply' || !fv.show.photo || tpl.id === 'minimal'
       ? 1
-      : (PHOTO_SIZES[fv.photoSize] || 1) * (fv.photoShape === 'polaroid' ? 1.15 : 1);
+      : (PHOTO_SIZES[fv.photoSize] || 1) * (!featuredLogo && fv.photoShape === 'polaroid' ? 1.15 : 1);
   const s: ViewState = { ...fv, colsEff, cols3, pscale, pgrow: Math.max(0, Math.round((pscale - 1) * 96)) };
 
   /* reply versions: one of the short generic versions, unless the design's own is chosen */
@@ -158,7 +168,16 @@ export function build(state: StateInput | SignatureState, opts?: BuildOptions): 
     ? { ...th, accent: onDark ? th.accent : fit(th.accent, surf, 4.6), accentDark: fit(th.accentDark, surfD, 4.6) }
     : th;
   const specs = gen ? replySpecs(s, thA, o, s.replyStyle) : restyle(tpl.assets(sT, thA, v, o), sT, thA, o);
+  if (featuredLogo && specs.photo?.kind === 'photo') {
+    specs.photo = { kind: 'logo', size: specs.photo.size, src: fv.logo.src };
+    delete specs.logo;
+  }
   if (s.cols3) Object.assign(specs, col3Specs(s, thA, o, tpl));
+  if (v === 'new')
+    s.badges.forEach(({ src, visible }, i) => {
+      if (!visible) return;
+      specs[`badge_${i}`] = { kind: 'logo', size: BADGE_SIZE, src };
+    });
   const names = Object.keys(specs);
   const images: Record<string, SignatureImage> = {};
   const A: AssetTokens = {};
@@ -214,6 +233,8 @@ export function build(state: StateInput | SignatureState, opts?: BuildOptions): 
       renderContext.big = false;
       const ex = gen ? '' : extrasHtml(s, thT, P, tpl, v);
       if (ex) core = tbl(tr(td(core)) + tr(td(ex, 'padding-top:12px;')));
+      const badges = v === 'new' ? badgesHtml(s.badges, A, P) : '';
+      if (badges) core = tbl(tr(td(core)) + tr(td(badges, 'padding-top:12px;')));
       if (ban) core = tbl(tr(td(core)) + tr(td(ban, 'padding-top:14px;')));
       let out = withSignoff(s, boxed(core, card, v), outer);
       const disc = disclaimerHtml(s, outer);
